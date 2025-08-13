@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AidMate Minimal UI</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; }
+  textarea { width: 100%; height: 100px; padding: 8px; }
+  button { margin: 6px 0; padding: 8px 12px; font-size: 1rem; }
+  #response { white-space: pre-wrap; background: #f4f4f4; padding: 8px; border: 1px solid #ccc; }
+</style>
+</head>
+<body>
+
+<h1>AidMate</h1>
+
+<label for="prompt">Ask AidMate:</label>
+<textarea id="prompt" placeholder="Type your question here..."></textarea>
+<br>
+<button onclick="askAidMate()">Ask</button>
+<button onclick="speakAidMate()">Speak</button>
+
+<h3>Response:</h3>
+<div id="response"></div>
+
+<audio id="player" controls style="margin-top:10px; display:none;"></audio>
+
+<script>
+const API_BASE = "http://localhost:7860";
+
+async function askAidMate() {
+  const prompt = document.getElementById("prompt").value.trim();
+  if (!prompt) return alert("Please type something first.");
+  document.getElementById("response").textContent = "Thinking...";
+  document.getElementById("player").style.display = "none";
+
+  try {
+    const res = await fetch(`${API_BASE}/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    document.getElementById("response").textContent = data.answer || "(No answer)";
+  } catch (err) {
+    document.getElementById("response").textContent = "Error: " + err;
+  }
+}
+
+async function speakAidMate() {
+  const text = document.getElementById("response").textContent.trim();
+  if (!text) return alert("Ask something first to get a response.");
+  try {
+    const formData = new FormData();
+    formData.append("text", text);
+    const res = await fetch(`${API_BASE}/tts`, { method: "POST", body: formData });
+    const data = await res.json();
+    if (data.audio_url) {
+      const player = document.getElementById("player");
+      player.src = `${API_BASE}${data.audio_url}`;
+      player.style.display = "block";
+      player.play();
+    } else {
+      alert("TTS failed.");
+    }
+  } catch (err) {
+    alert("Error: " + err);
+  }
+}
+</script>
+
+</body>
+</html>

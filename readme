@@ -1,0 +1,17 @@
+How to Run
+Make sure Ollama is running
+
+powershell
+Copy
+Edit
+& "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" serve
+Start your FastAPI backend
+
+powershell
+Copy
+Edit
+cd C:\SourceCode\AidMate
+.\.venv\Scripts\activate
+uvicorn app:app --host 0.0.0.0 --port 7860 --reload
+Open the UI
+Double-click C:\SourceCode\AidMate\web\index.html to open in your browser.

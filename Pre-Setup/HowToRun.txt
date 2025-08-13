@@ -1,0 +1,10 @@
+How to run:
+
+Open PowerShell (Admin)
+
+Go to the script location
+
+Run this as bootstrap.ps1
+
+Run: .\bootstrap.ps1
+If PowerShell blocks it, run once: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass

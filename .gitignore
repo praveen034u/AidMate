@@ -1,0 +1,6 @@
+venv/
+.venv/
+_pytest_cache/
+__pycache__/    
+piper/
+whisper/
