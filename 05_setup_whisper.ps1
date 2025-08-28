@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 Write-Host "=== Step 2: Whisper.cpp setup ===" -ForegroundColor Cyan
 
 # Config
-$workspace   = "C:\SourceCode\AidMate"
+$workspace   = $PSScriptRoot
 $zipPath     = Join-Path $workspace "whisper.zip"
 $extractTmp  = Join-Path $workspace "whisper_tmp_extract"
 $targetDir   = Join-Path $workspace "whisper"

@@ -1,4 +1,4 @@
-﻿# app.py  (voice-powered, minimal no-RAG)
+# app.py  (voice-powered, minimal no-RAG)
 import os, uuid, subprocess, re, shutil, tempfile
 from pathlib import Path
 from typing import Optional, Dict, List
@@ -24,8 +24,8 @@ PIPER_CFG   = WORKDIR / "piper" / "en_US-amy-low.onnx.json"
 
 # ---- Whisper.cpp (STT) ----
 WHISPER_DIR   = WORKDIR / "whisper"
-WHISPER_EXE_NEW = WHISPER_DIR / "whisper-cli.exe"   # new naming in whisper.cpp
-WHISPER_EXE_OLD = WHISPER_DIR / "main.exe"           # legacy binary (deprecated)
+WHISPER_EXE_NEW = WHISPER_DIR / "whisper-whisper.exe"   # new naming in whisper.cpp
+WHISPER_EXE_OLD = WHISPER_DIR / "whisper.exe"           # legacy binary (deprecated)
 WHISPER_MODEL   = WHISPER_DIR / "ggml-base.en.bin"      # change to ggml-small.en.bin for better accuracy
 FFMPEG_BIN      = "ffmpeg"                              # must be on PATH
 
@@ -55,8 +55,8 @@ def resolve_whisper_exe() -> Path:
     else:
         raise RuntimeError(
             f"Whisper binary not found. Expected either:\n"
-            f" â€¢ {WHISPER_EXE_NEW}\n"
-            f" â€¢ {WHISPER_EXE_OLD}"
+            f" • {WHISPER_EXE_NEW}\n"
+            f" • {WHISPER_EXE_OLD}"
         )
 
 def _discover_whisper_exe() -> Path:
@@ -224,15 +224,15 @@ def tts(text: str = Form(...)):
 def stt(file: UploadFile = File(...), lang: str = Form("en")):
     """
     Accepts audio (webm/ogg/wav/m4a/mp3), converts to 16k mono WAV via ffmpeg,
-    runs Whisper.cpp, and returns text. Emits useful diagnostics when it fails.
+    runs Whisper.cpp, and returns text.
+    Robust to different whisper builds/output behaviors.
     """
-    # 0) Tooling sanity
     try:
         whisper_exe = ensure_whisper_ok()   # verifies model + ffmpeg, resolves exe path
     except Exception as e:
         return {"error": "setup", "detail": str(e)}
 
-    # 1) Read uploaded bytes
+    # read uploaded bytes
     try:
         raw = file.file.read()
     finally:
@@ -241,10 +241,7 @@ def stt(file: UploadFile = File(...), lang: str = Form("en")):
         except Exception:
             pass
 
-    if not raw or len(raw) == 0:
-        return {"error": "no-audio", "detail": "Uploaded file is empty (0 bytes)."}
-
-    import tempfile, glob, json
+    import tempfile, glob
     with tempfile.TemporaryDirectory() as td:
         td_path = Path(td)
         ext = _guess_ext(file.content_type)
@@ -253,58 +250,78 @@ def stt(file: UploadFile = File(...), lang: str = Form("en")):
 
         in_path.write_bytes(raw)
 
-        # 2) ffmpeg -> 16kHz mono wav
-        try:
-            conv = subprocess.run(
-                [
-                    FFMPEG_BIN, "-y",
-                    "-hide_banner", "-loglevel", "error",
-                    "-i", str(in_path),
-                    "-ac", "1", "-ar", "16000",
-                    str(wav_path),
-                ],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=td, timeout=90
-            )
-        except subprocess.TimeoutExpired:
-            return {"error": "ffmpeg timeout", "detail": "ffmpeg exceeded 90s limit."}
-
-        if conv.returncode != 0 or not wav_path.exists() or wav_path.stat().st_size == 0:
+        # 1) ffmpeg -> 16kHz mono wav
+        conv = subprocess.run(
+            [
+                FFMPEG_BIN, "-y",
+                "-hide_banner", "-loglevel", "error",
+                "-i", str(in_path),
+                "-ac", "1", "-ar", "16000",
+                str(wav_path),
+            ],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=td
+        )
+        if conv.returncode != 0 or not wav_path.exists():
             return {
                 "error": "ffmpeg conversion failed",
-                "detail": (conv.stderr or conv.stdout or "ffmpeg returned non-zero without output.")[:2000],
+                "detail": (conv.stderr or conv.stdout).strip()[:2000],
                 "content_type": file.content_type,
+                "saved_as": str(in_path),
             }
 
-        # 3) Run Whisper.cpp with explicit output prefix
-        out_txt = td_path / "out.txt"
-        cmd = [str(whisper_exe),
-               "-m", str(WHISPER_MODEL),
-               "-f", str(wav_path),
-               "-l", lang,
-               "-otxt", "-of", "out"]
-
-        try:
+        def run_and_collect(cmd):
+            """Run whisper with given args in temp cwd; return (rc, out, err, txt_paths)."""
             proc = subprocess.run(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=td, timeout=300
+                cmd,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=td
             )
-        except subprocess.TimeoutExpired:
-            return {"error": "whisper timeout", "detail": "whisper exceeded 300s limit."}
+            # collect any .txt produced in cwd
+            txt_paths = [Path(p) for p in glob.glob(str(td_path / "*.txt"))]
+            return proc.returncode, proc.stdout, proc.stderr, txt_paths
 
-        # 4) Prefer file output; if missing, fall back to stdout
-        text = ""
-        if out_txt.exists():
-            try:
-                text = out_txt.read_text(encoding="utf-8", errors="ignore").strip()
-            except Exception:
-                text = ""
+        # Attempt A: classic '-otxt' (default output: audio.wav.txt in cwd)
+        cmd_a = [str(whisper_exe), "-m", str(WHISPER_MODEL), "-f", str(wav_path), "-l", lang, "-otxt"]
+        rc_a, out_a, err_a, txts_a = run_and_collect(cmd_a)
 
+        def pick_text(txt_paths):
+            for p in txt_paths:
+                try:
+                    txt = p.read_text(encoding="utf-8", errors="ignore").strip()
+                    if txt:
+                        return txt
+                except Exception:
+                    pass
+            return ""
+
+        text = pick_text(txts_a)
+
+        # Attempt B: explicit output prefix '-of out'
         if not text:
-            # Some builds print text to stdout if file writing fails
-            text = (proc.stdout or "").strip()
+            out_prefix = td_path / "out"
+            cmd_b = [str(whisper_exe), "-m", str(WHISPER_MODEL), "-f", str(wav_path), "-l", lang, "-otxt", "-of", str(out_prefix)]
+            rc_b, out_b, err_b, txts_b = run_and_collect(cmd_b)
+            text = pick_text(txts_b)
+        else:
+            rc_b = 0; out_b = ""; err_b = ""; txts_b = []
+
+        # If still no text, return helpful diagnostics (trim noisy deprecation lines)
+        def clean_diag(s: str) -> str:
+            if not s: return ""
+            bad = [
+                "binary 'whisper.exe' is deprecated",
+                "Please use 'whisper-whisper.exe' instead",
+                "examples/deprecation-warning"
+            ]
+            keep = []
+            for line in s.splitlines():
+                if any(bad_frag.lower() in line.lower() for bad_frag in bad):
+                    continue
+                keep.append(line)
+            return "\n".join(keep).strip()
 
         if text:
             return {"text": text}
 
-        # 5) Return raw diagnostics (don’t over-clean; just trim length)
-        diag = ((proc.stderr or "") + "\n" + (proc.stdout or "")).strip()
+        # Nothing usable produced — show stderr/stdout from both attempts
+        diag = (clean_diag(err_a or out_a) + "\n" + clean_diag(err_b or out_b)).strip()
         return {"error": "whisper failed", "detail": diag[:2000]}

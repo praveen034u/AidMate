@@ -6,7 +6,7 @@ fastapi==0.111.0
 uvicorn[standard]==0.30.0
 pydantic==2.8.2
 python-multipart==0.0.9   # for /tts form upload
-
+python-multipart
 # RAG utilities
 numpy==1.26.4
 faiss-cpu==1.8.0          # if this fails on your Windows env, just delete this line; the app falls back to NumPy

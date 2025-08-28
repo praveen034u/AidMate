@@ -1,10 +1,11 @@
 <#
   run_aidmate.ps1  (ASCII-safe)
   One-click launcher for AidMate
-  - Starts Ollama on a free port (11434+), honoring OLLAMA_HOST if already set
-  - Activates .venv and installs requirements (if present)
-  - Mode "api": runs FastAPI (uvicorn) and opens web/index.html
-  - Mode "voice": runs test_pipeline.ps1 (mic -> STT -> LLM -> TTS)
+
+  Modes:
+    - api   : Start Ollama, ensure Piper, activate .venv, run FastAPI (uvicorn), open web/index.html
+    - voice : Start Ollama, run test_pipeline.ps1 (mic -> STT -> LLM -> TTS)
+
   Workspace: C:\SourceCode\AidMate
 #>
 
@@ -12,17 +13,30 @@ param(
   [ValidateSet("api","voice")]
   [string]$Mode = "api",
 
-  # Web server port for FastAPI (your browser UI talks to this)
-  [int]$ApiPort = 7860
+  # FastAPI port
+  [int]$ApiPort = 7860,
+
+  # Preferred Ollama host:port (leave empty to auto-pick a free port starting at 11434)
+  [string]$OllamaHost = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+# --------------------------
+# Paths
+# --------------------------
 $workspace = "C:\SourceCode\AidMate"
 $venvDir   = Join-Path $workspace ".venv"
 $reqFile   = Join-Path $workspace "requirements.txt"
 $appFile   = Join-Path $workspace "app.py"
 $uiFile    = Join-Path $workspace "web\index.html"
 $pipeline  = Join-Path $workspace "test_pipeline.ps1"
+
+# Piper locations (some installs unzip to piper\piper\piper.exe)
+$piperRoot1 = Join-Path $workspace "piper\piper.exe"
+$piperRoot2 = Join-Path $workspace "piper\piper\piper.exe"
+$voiceOnnx  = Join-Path $workspace "piper\en_US-amy-low.onnx"
+$voiceCfg   = Join-Path $workspace "piper\en_US-amy-low.onnx.json"
 
 Write-Host "=== AidMate Launcher ($Mode) ===" -ForegroundColor Cyan
 Set-Location $workspace
@@ -42,45 +56,65 @@ function Test-OllamaApi { param([string]$HostPort)
   try { Invoke-RestMethod -Uri "http://$HostPort/api/tags" -Method GET -TimeoutSec 2 | Out-Null; return $true } catch { return $false }
 }
 function Wait-ForOllama { param([string]$HostPort,[int]$Seconds=25)
-  $deadline=(Get-Date).AddSeconds($Seconds); while((Get-Date)-lt $deadline){ if(Test-OllamaApi -HostPort $HostPort){return $true}; Start-Sleep -Milliseconds 800 }; return $false
+  $deadline=(Get-Date).AddSeconds($Seconds)
+  while((Get-Date) -lt $deadline) {
+    if (Test-OllamaApi -HostPort $HostPort) { return $true }
+    Start-Sleep -Milliseconds 800
+  }
+  return $false
 }
 function Start-Ollama {
-  # Honor existing OLLAMA_HOST if the API is up
+  param([string]$PrefHostPort)
+
+  # If the API is already up, honor it
   if ($env:OLLAMA_HOST -and (Test-OllamaApi -HostPort $env:OLLAMA_HOST)) {
     Write-Host "[OK] Ollama already running at $($env:OLLAMA_HOST)" -ForegroundColor Green
     return $env:OLLAMA_HOST
   }
 
-  # Choose a host:port
-  $hostPort = if ($env:OLLAMA_HOST) { $env:OLLAMA_HOST } else { "127.0.0.1:11434" }
-  $host,$port = $hostPort.Split(":")
-  if (-not (Test-PortFree -Port [int]$port)) {
-    $port = Find-FreePort -Start 11434 -Tries 20
+  # Decide host:port
+  if ([string]::IsNullOrWhiteSpace($PrefHostPort)) {
+    $host = "127.0.0.1"
+    $port = 11434
+    if (-not (Test-PortFree -Port $port)) {
+      Write-Host "[INFO] Default port 11434 busy. Searching for a free port..." -ForegroundColor Yellow
+      $port = Find-FreePort -Start 11434 -Tries 20
+      Write-Host "[OK] Using $host`:$port for Ollama" -ForegroundColor Green
+    }
     $hostPort = "$host`:$port"
-    Write-Host "[INFO] Default port busy; using $hostPort" -ForegroundColor Yellow
+  } else {
+    $hostPort = $PrefHostPort
   }
 
-  # Start with explicit --host (more reliable than env on some Windows builds)
+  # Resolve ollama.exe
   $exe = (Get-Command "ollama" -ErrorAction SilentlyContinue).Source
   if (-not $exe) {
     $cands = @("$Env:LOCALAPPDATA\Programs\Ollama\ollama.exe","$Env:ProgramFiles\Ollama\ollama.exe")
     $exe = ($cands | Where-Object { Test-Path $_ } | Select-Object -First 1)
   }
-  if (-not $exe) { throw "Ollama not found. Install with winget or launch the Ollama app once." }
+  if (-not $exe) { throw "Ollama not found. Install it or run the Ollama app once." }
 
+  # Start with explicit --host (more reliable than only env)
   Write-Host "[INFO] Starting Ollama: $exe serve --host $hostPort" -ForegroundColor Yellow
   Start-Process -FilePath $exe -ArgumentList "serve --host $hostPort" -WindowStyle Minimized | Out-Null
   if (-not (Wait-ForOllama -HostPort $hostPort -Seconds 20)) {
-    # Try visible window once
     Start-Process -FilePath "cmd.exe" -ArgumentList "/c start ""Ollama Serve"" `"$exe`" serve --host $hostPort" | Out-Null
     if (-not (Wait-ForOllama -HostPort $hostPort -Seconds 20)) {
       throw "Could not start Ollama on $hostPort. Try running: `"$exe`" serve --host $hostPort"
     }
   }
-  # Export OLLAMA_HOST for this session (do not set globally here)
+
   $env:OLLAMA_HOST = $hostPort
   Write-Host "[OK] Ollama running at http://$hostPort" -ForegroundColor Green
   return $hostPort
+}
+function Ensure-Piper {
+  if (-not (Test-Path $piperRoot1) -and -not (Test-Path $piperRoot2)) {
+    throw "Piper not found. Expected at: `n  $piperRoot1 `nor `n  $piperRoot2"
+  }
+  if (-not (Test-Path $voiceOnnx)) { throw "Missing voice model: $voiceOnnx" }
+  if (-not (Test-Path $voiceCfg))  { throw "Missing voice config: $voiceCfg" }
+  Write-Host "[OK] Piper files present." -ForegroundColor Green
 }
 function Ensure-Venv-And-Install {
   if (-not (Test-Path $venvDir)) {
@@ -98,43 +132,49 @@ function Ensure-Venv-And-Install {
     Write-Host "[WARN] requirements.txt not found; skipping installs" -ForegroundColor Yellow
   }
 }
+function Open-UI {
+  if (Test-Path $uiFile) {
+    Write-Host "[INFO] Opening web UI..." -ForegroundColor Yellow
+    Start-Process $uiFile | Out-Null
+  } else {
+    Write-Host "[WARN] web\index.html not found; you can still hit the API at http://localhost:$ApiPort" -ForegroundColor Yellow
+  }
+}
 
 # --------------------------
 # 1) Start Ollama
 # --------------------------
-$ollamaHost = Start-Ollama
+$ollamaHost = Start-Ollama -PrefHostPort $OllamaHost
 
 # --------------------------
-# 2) Mode selection
+# 2) Mode handling
 # --------------------------
 switch ($Mode) {
   "api" {
-    # Prepare Python env
+    # Make sure Piper assets exist (app.py depends on them)
+    Ensure-Piper
+
+    # Prepare Python venv + deps
     Ensure-Venv-And-Install
 
-    # Warn if app.py missing
     if (-not (Test-Path $appFile)) {
       Write-Host "[ERROR] app.py not found in $workspace" -ForegroundColor Red
-      Write-Host "Create app.py (FastAPI) or run: .\run_aidmate.ps1 -Mode voice" -ForegroundColor Yellow
       exit 1
     }
 
-    # Start API (non-blocking so we can open UI)
-    Write-Host "[INFO] Starting FastAPI on http://localhost:$ApiPort ..." -ForegroundColor Yellow
-    $uv = Start-Process -FilePath "$venvDir\Scripts\python.exe" -ArgumentList "-m uvicorn app:app --host 0.0.0.0 --port $ApiPort --reload" -PassThru
+    # Start FastAPI (uvicorn) in background so we can open the UI
+    Write-Host "[INFO] Starting FastAPI at http://localhost:$ApiPort ..." -ForegroundColor Yellow
+    $pythonExe = "$venvDir\Scripts\python.exe"
+    $uv = Start-Process -FilePath $pythonExe -ArgumentList "-m uvicorn app:app --host 0.0.0.0 --port $ApiPort --reload" -PassThru
     Start-Sleep -Seconds 2
     Write-Host "[OK] FastAPI started (PID $($uv.Id))" -ForegroundColor Green
 
-    # Open browser UI if present
-    if (Test-Path $uiFile) {
-      Write-Host "[INFO] Opening web UI..." -ForegroundColor Yellow
-      Start-Process $uiFile | Out-Null
-    } else {
-      Write-Host "[WARN] web\index.html not found. You can still call the API at http://localhost:$ApiPort" -ForegroundColor Yellow
-    }
+    # Open the HTML UI if present
+    Open-UI
 
     Write-Host ""
-    Write-Host "Stop server:  taskkill /PID $($uv.Id) /F" -ForegroundColor Cyan
+    Write-Host "API:    http://localhost:$ApiPort" -ForegroundColor Cyan
+    Write-Host "Stop:   taskkill /PID $($uv.Id) /F" -ForegroundColor Cyan
   }
 
   "voice" {
@@ -142,7 +182,7 @@ switch ($Mode) {
       Write-Host "[ERROR] test_pipeline.ps1 not found in $workspace" -ForegroundColor Red
       exit 1
     }
-    Write-Host "[INFO] Running voice pipeline (you will be prompted for your mic)..." -ForegroundColor Yellow
+    Write-Host "[INFO] Running voice pipeline..." -ForegroundColor Yellow
     powershell -ExecutionPolicy Bypass -File $pipeline
   }
 }
