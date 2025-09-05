@@ -74,16 +74,10 @@ function Start-Ollama {
 
   # Decide host:port
   if ([string]::IsNullOrWhiteSpace($PrefHostPort)) {
-    $host = "127.0.0.1"
-    $port = 11434
-    if (-not (Test-PortFree -Port $port)) {
-      Write-Host "[INFO] Default port 11434 busy. Searching for a free port..." -ForegroundColor Yellow
-      $port = Find-FreePort -Start 11434 -Tries 20
-      Write-Host "[OK] Using $host`:$port for Ollama" -ForegroundColor Green
-    }
-    $hostPort = "$host`:$port"
-  } else {
-    $hostPort = $PrefHostPort
+    $hostAddr = "127.0.0.1"
+    $port = 11434   
+    $hostPort = "$hostAddr`:$port"
+  
   }
 
   # Resolve ollama.exe
@@ -95,14 +89,14 @@ function Start-Ollama {
   if (-not $exe) { throw "Ollama not found. Install it or run the Ollama app once." }
 
   # Start with explicit --host (more reliable than only env)
-  Write-Host "[INFO] Starting Ollama: $exe serve --host $hostPort" -ForegroundColor Yellow
-  Start-Process -FilePath $exe -ArgumentList "serve --host $hostPort" -WindowStyle Minimized | Out-Null
-  if (-not (Wait-ForOllama -HostPort $hostPort -Seconds 20)) {
-    Start-Process -FilePath "cmd.exe" -ArgumentList "/c start ""Ollama Serve"" `"$exe`" serve --host $hostPort" | Out-Null
-    if (-not (Wait-ForOllama -HostPort $hostPort -Seconds 20)) {
-      throw "Could not start Ollama on $hostPort. Try running: `"$exe`" serve --host $hostPort"
-    }
-  }
+  # Write-Host "[INFO] Starting Ollama: $exe serve --host $hostPort" -ForegroundColor Yellow
+  # Start-Process -FilePath $exe -ArgumentList "serve --host $hostPort" -WindowStyle Minimized | Out-Null
+  # if (-not (Wait-ForOllama -HostPort $hostPort -Seconds 20)) {
+  #   Start-Process -FilePath "cmd.exe" -ArgumentList "/c start ""Ollama Serve"" `"$exe`" serve --host $hostAddr --port  $port" | Out-Null
+  #   if (-not (Wait-ForOllama -HostPort $hostPort -Seconds 20)) {
+  #     throw "Could not start Ollama on $hostPort. Try running: `"$exe`" serve --host $hostAddr --port  $port"
+  #   }
+  # }
 
   $env:OLLAMA_HOST = $hostPort
   Write-Host "[OK] Ollama running at http://$hostPort" -ForegroundColor Green

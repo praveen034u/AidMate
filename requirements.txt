@@ -11,3 +11,7 @@ python-multipart
 numpy==1.26.4
 faiss-cpu==1.8.0          # if this fails on your Windows env, just delete this line; the app falls back to NumPy
 requests==2.32.4
+langchain
+langchain-community
+langchain_core
+langchain_ollama

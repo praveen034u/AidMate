@@ -1,21 +1,42 @@
 ﻿# app.py  (voice-powered, minimal no-RAG)
+
+
 import os, uuid, subprocess, re, shutil, tempfile
 from pathlib import Path
 from typing import Optional, Dict, List
 import requests
-
-from fastapi import FastAPI, Form, UploadFile, File, Header
+from fastapi import FastAPI, Form, UploadFile, File, Header , HTTPException, status
+from fastapi.responses import JSONResponse
+import mimetypes
+import shutil
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from langchain_community.document_loaders import TextLoader, CSVLoader, PyPDFLoader
+from pathlib import Path
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import OllamaEmbeddings
+from langchain.docstore.document import Document
+from langchain_core.output_parsers import StrOutputParser
+from langchain_ollama import OllamaEmbeddings
+from langchain_ollama import OllamaLLM
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
+
 
 # -------------------------
 # Config
 # -------------------------
+UPLOAD_DIR = "uploads"
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_EXTENSIONS = {".pdf", ".txt", ".doc", ".docx"}
 WORKDIR = Path(r"C:\SourceCode\AidMate")
 STATIC_DIR = WORKDIR / "static"
 AUDIO_DIR  = STATIC_DIR / "audio"
 AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # Piper (TTS)
 PIPER_EXE   = WORKDIR / "piper/piper" / "piper.exe"
@@ -32,6 +53,24 @@ FFMPEG_BIN      = "ffmpeg"                              # must be on PATH
 # Ollama
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "127.0.0.1:11434")
 OLLAMA_GEN_URL = f"http://{OLLAMA_HOST}/api/generate"
+OLLAMA_EMBED_MODEL = "nomic-embed-text:latest"
+
+# Vector DB 
+VECTOR_DB_ROOT = Path("./vectordb")
+VECTOR_DB_ROOT.mkdir(parents=True, exist_ok=True)
+
+# -------No Answer Indicators when VectorDb does not contain relevant information------------
+no_answer_indicators = [
+                    "not in the database",
+                    "no information",
+                    "cannot find",
+                    "i don't know",
+                    "no relevant information",
+                    "not mentioned",
+                    "not available in the context",
+                    "i may be able to assist you better",
+                    "not a medical professional"
+                   ]
 
 # -------------------------
 # Runtime checks
@@ -163,8 +202,8 @@ def clean_markdown_for_tts(text: str) -> str:
 # -------------------------
 class AskBody(BaseModel):
     prompt: str
-    model: str = "gpt-oss:20b"
-    #  model: str = "llama3.1:8b"
+    #model: str = "gpt-oss:20b"
+    model: str = "llama3.1:8b"
     system: Optional[str] = (
         "You are AidMate, an offline assistant.\n"
         "- Start with a single H2 markdown heading (## Heading) naming the action/section.\n"
@@ -174,12 +213,7 @@ class AskBody(BaseModel):
         "- End with: Not a medical professional."
     )
 
-def call_ollama(full_prompt: str, model: str) -> str:
-    payload = {"model": model, "prompt": full_prompt, "stream": False}
-    r = requests.post(OLLAMA_GEN_URL, json=payload, timeout=600)
-    r.raise_for_status()
-    data = r.json()
-    return (data.get("response") or "").strip()
+
 
 # -------------------------
 # FastAPI app
@@ -194,10 +228,22 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 @app.post("/ask")
 def ask(body: AskBody, x_session_id: Optional[str] = Header(default="")):
     # stitch short conversational context
+    print("Ask:", body.prompt)
+    print("Session:", x_session_id or "(new)")
+
     history = render_history(x_session_id)
     sys_prefix = (body.system + "\n\n") if body.system else ""
     convo = (history + "\n\n") if history else ""
-    reply = call_ollama(sys_prefix + convo + "User: " + body.prompt + "\nAssistant:", body.model)
+
+    # Call the LLM + VectorDb  with the user prompt
+    reply = call_Vector_ollama(body.prompt, body.model)
+    print("Reply:", reply)
+
+    if any(indicator in reply.lower() for indicator in no_answer_indicators):
+            # If the answer indicates no information found, fallback to plain LLM response
+            print("No relevant information found in the context. Falling back to plain LLM response.")
+            reply = call_ollama(sys_prefix + convo + "User: " + body.prompt + "\nAssistant:", body.model)
+            print("Fallback Reply:", reply)
 
     # update memory
     push_turn(x_session_id, "user", body.prompt)
@@ -308,3 +354,176 @@ def stt(file: UploadFile = File(...), lang: str = Form("en")):
         # 5) Return raw diagnostics (don’t over-clean; just trim length)
         diag = ((proc.stderr or "") + "\n" + (proc.stdout or "")).strip()
         return {"error": "whisper failed", "detail": diag[:2000]}
+
+# Create upload directory if it doesn't exist
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+def validate_file(file: UploadFile) -> bool:
+    """Validate file extension and size"""
+    # Check file extension
+    file_extension = Path(file.filename).suffix.lower()
+    if file_extension not in ALLOWED_EXTENSIONS:
+        return False
+
+    return True
+
+def generate_unique_filename(original_filename: str) -> str:
+    """Generate unique filename to avoid conflicts"""
+    file_extension = Path(original_filename).suffix
+    unique_id = str(uuid.uuid4())
+    return f"{unique_id}{file_extension}"
+
+def generate_unique_foldername():
+    """Generate unique folder name to avoid conflicts"""  
+    unique_id = str(uuid.uuid4())
+    return f"{unique_id}"
+
+@app.post("/upload/file")
+def upload_file(file: UploadFile =  File(...)):
+    """Upload a single file"""
+    try:
+        # Validate file
+        if not validate_file(file):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File type not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
+            )
+        
+       
+        # Generate unique filename
+        unique_filename = generate_unique_filename(file.filename)
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+        # Save file to disk
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer) 
+        
+        # Get file info
+        #file_size = len(content)
+        mime_type = mimetypes.guess_type(file.filename)[0]
+
+        # create or update vector DB
+        if create_vector_db_from_files():
+            print("Vector DB created/updated successfully.")
+            # for filename in os.listdir(UPLOAD_DIR):
+            #     file_path = os.path.join(UPLOAD_DIR, filename)
+            #     if os.path.isfile(file_path): 
+            #         print("File deleted successfully.") # ensures it's a file
+            #         os.remove(file_path)                
+               
+            return JSONResponse(
+                        status_code=status.HTTP_201_CREATED,
+                            content={
+                            "message": "File uploaded successfully",
+                            "filename": unique_filename,               
+                            "mime_type": mime_type,
+                            "file_path": file_path
+                        }
+                    )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload file: {str(e)}"
+        )
+    
+def list_files(directory):
+    return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+    
+def load_documents_from_files():
+    """Load documents from multiple file formats and return as LangChain Documents."""   
+    files = list_files(UPLOAD_DIR)
+    print(f"Found {len(files)} files.")
+    files = [Path(UPLOAD_DIR) / f for f in files]   
+    docs = []
+    for file in files:
+        ext = file.suffix.lower()
+        if ext == ".txt":
+            loader = TextLoader(str(file), encoding="utf-8")
+        elif ext == ".csv":
+            loader = CSVLoader(str(file))
+        elif ext == ".pdf":
+            loader = PyPDFLoader(str(file))
+        else:
+            print(f"Skipping unsupported file type: {file}")
+            continue
+        docs.extend(loader.load())
+    return docs
+
+
+def create_vector_db_from_files():
+    """Create and save a FAISS vector DB from multiple input files."""
+    embeddings = OllamaEmbeddings(model=OLLAMA_EMBED_MODEL)
+    docs = load_documents_from_files()
+
+    if not docs:
+        raise ValueError("No documents loaded. Make sure files are valid.")
+
+    print(f"Loaded {len(docs)} documents. Creating embeddings...")
+    vectorstore = FAISS.from_documents(docs, embeddings)
+
+    save_path = VECTOR_DB_ROOT  # unique folder
+    os.makedirs(save_path, exist_ok=True)
+    vectorstore.save_local(str(save_path))
+    print(f"Vector DB saved at {save_path}")
+    return True
+
+@app.get("/")
+async def root():
+    return {"message": "Hi, I am live"}
+
+
+ # 3. Set up the retrieval chain
+def setup_rag_chain(model, vector_store, humanMessage: str):
+    llm = OllamaLLM(model=model, temperature=0.1)
+    retriever = vector_store.as_retriever(search_kwargs={"k": 3})  
+
+    template = """
+    You are AidMate, an offline assistant that uses the provided context to answer the question {question}.
+    - Use only the information provided in the context to answer the question.
+    - Answer the question based only on the following context: {context}
+    - If the answer is not contained within the context, say "I don't know" and end with: Not a medical professional.
+    - If the question is not related to the context, politely inform them that you are tuned to only answer questions related to the context.
+    - Use a neutral, professional tone.
+    - If the context contains multiple relevant pieces of information, synthesize them into a coherent answer.
+    - Start with a single H2 markdown heading (## Heading) naming the action/section.
+    - Then provide concise, step-by-step numbered instructions (1., 2., 3.).
+    - Do NOT use bold/italics/emphasis markers like **, *, or _ in the body.
+    - Avoid decorative symbols; keep content clean and readable."""
+
+    prompt = ChatPromptTemplate.from_template(template)
+
+    # 1) Map user question into {question}
+    chain = (
+            {"context": retriever, "question": RunnablePassthrough()}
+            | prompt
+            | llm
+            | StrOutputParser()
+        )
+    
+    return chain
+
+def call_Vector_ollama(full_prompt: str, model: str) -> str:
+        vector_store_path = VECTOR_DB_ROOT
+        print(f"Loading vector store from {vector_store_path}...")
+        embeddings = OllamaEmbeddings(model=OLLAMA_EMBED_MODEL)
+        print("Loading FAISS vector store...")
+        vector_store = FAISS.load_local(vector_store_path, embeddings, allow_dangerous_deserialization=True)
+        print("Setting up RAG chain...")
+        rag_chain = setup_rag_chain(model, vector_store, full_prompt)
+        print("Invoking RAG chain...")
+        print("Full prompt:", full_prompt)
+        response = rag_chain.invoke(full_prompt)
+        print("RAG chain response:", response)
+        return response
+
+def call_ollama(full_prompt: str, model: str) -> str:
+    payload = {"model": model, "prompt": full_prompt, "stream": False}
+    r = requests.post(OLLAMA_GEN_URL, json=payload, timeout=600)
+    r.raise_for_status()
+    data = r.json()
+    return (data.get("response") or "").strip()
+
+
