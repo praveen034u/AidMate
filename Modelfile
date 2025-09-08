@@ -1,0 +1,5 @@
+FROM phi3:mini
+
+# You can keep these params conservative for CPU
+PARAMETER temperature 0.2
+PARAMETER num_ctx 2048
