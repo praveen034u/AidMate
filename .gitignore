@@ -4,3 +4,7 @@ _pytest_cache/
 __pycache__/    
 piper/
 whisper/
+models/
+static/
+uploads/
+ingest/
