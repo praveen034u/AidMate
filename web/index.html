@@ -27,8 +27,43 @@
         .btn-warning-custom { background-color: var(--warning-amber); border-color: var(--warning-amber); color: white; }
         .btn-warning-custom:hover { background-color: #ff9800; border-color: #ff9800; color: white; }
         .help-support-card, .rag-source-card { color: white; border: none; }
-        .help-support-card { background: linear-gradient(135deg, var(--medical-teal), var(--medical-teal-light)); }
-        .rag-source-card { background: linear-gradient(135deg, var(--emergency-orange), var(--emergency-orange-light)); }
+       /* ...existing code... */
+.help-support-card {
+    background: #fff;
+    color: #1d7a8c;
+    border: 2px solid #1d7a8c;
+}
+.help-support-card .card-header {
+    background: #1d7a8c;
+    color: #fff;
+    border-bottom: none;
+}
+.rag-source-card {
+    background: #fff;
+    color: #ff6b35;
+    border: 2px solid #ff6b35;
+}
+.rag-source-card .card-header {
+    background: #ff6b35;
+    color: #fff;
+    border-bottom: none;
+}
+/* ...existing code... */
+.rag-source-card .form-check-input {
+    accent-color: #535555; /* matches Answer text color */
+    border: 2px solid #535555 !important;
+    box-shadow: none !important;
+}
+.rag-source-card .form-check-input:focus {
+    border-color: #535555!important;
+    box-shadow: 0 0 0 0.15rem rgba(221, 101, 46, 0.25) !important;
+}
+.rag-source-card .form-check-label {
+    color: #535555 !important; /* matches Answer text color */
+    font-weight: 500;
+}
+/* ...existing code... */
+/* ...existing code... */
         .answer-card { background: white; border: 1px solid #e9ecef; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
         .audio-player { background: white; border: 1px solid #dee2e6; border-radius: .5rem; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
         .recording-pulse { animation: pulse 1s infinite; }
@@ -43,6 +78,79 @@
         .answer-content::-webkit-scrollbar-track { background:#f1f1f1; border-radius:3px; }
         .answer-content::-webkit-scrollbar-thumb { background: var(--medical-teal); border-radius:3px; }
         @media (max-width: 768px) { .btn-group-mobile { flex-direction: column; gap: .5rem; } .btn-group-mobile .btn { width: 100%; } }
+
+        /* --- Message Status Buttons & Popup --- */
+       /* ...existing code... */
+/* ...existing code... */
+.msg-btn {
+    position: relative;
+    margin-left: 2px;
+    margin-right: 2px;
+    min-width: 80px;
+    max-width: 100px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    /* Remove overflow: hidden and text-overflow */
+}
+.msg-badge {
+    font-size: 0.85em;
+    top: 50%;
+    right: -12px; /* adjust as needed */
+    min-width: 24px;
+    height: 24px;
+    line-height: 22px;
+    background-color: #000 !important;
+    color: #fff !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    z-index: 2;
+    position: absolute;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+/* ...existing code... */
+        .msg-popup {
+            position: absolute;
+            left: 50%;
+            top: 120%;
+            transform: translateX(-50%);
+            min-width: 180px;
+            background: #fff;
+            color: #222;
+            border-radius: 8px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+            padding: 1rem;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            font-size: 0.97rem;
+            border: 1px solid #e0e0e0;
+        }
+        .msg-popup.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .msg-popup .popup-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .msg-popup ul {
+            padding-left: 1.1em;
+            margin: 0;
+            font-size: 0.96em;
+        }
+        .msg-popup li {
+            margin-bottom: 0.3em;
+        }
+        @media (max-width: 600px) {
+            .msg-popup { min-width: 120px; font-size: 0.92rem; }
+        }
     </style>
 </head>
 <body>
@@ -130,15 +238,33 @@
                     <div class="d-flex align-items-center mb-3">
                         <i class="bi bi-chat-square-text me-2"></i>
                         <div>
-                            <div class="fw-semibold">Message Status:</div>
+                            <div class="fw-semibold d-flex align-items-center gap-2">
+                                Message Status:
+                            </div>
                             <small class="opacity-75">Mode: SMS</small>
+                            <!-- ...existing code... -->
+<div class="mt-2 d-flex gap-2 position-relative" style="overflow: visible;">
+    <button type="button" class="btn btn-sm btn-warning position-relative msg-btn" data-category="yellow" tabindex="0">
+        InProgress
+        <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
+    </button>
+    <button type="button" class="btn btn-sm btn-success position-relative msg-btn" data-category="green" tabindex="0">
+        Sent
+        <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
+    </button>
+    <button type="button" class="btn btn-sm btn-primary position-relative msg-btn" data-category="blue" tabindex="0">
+        Received
+        <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
+    </button>
+</div>
+<!-- ...existing code... -->
                         </div>
                     </div>
                     <div class="d-flex align-items-center">
                         <i class="bi bi-telephone me-2"></i>
                         <div>
                             <div class="fw-semibold">Emergency Contact</div>
-                            <a href="tel:+18048689796" class="text-white text-decoration-none">
+                            <a href="tel:+18048689796" class="text-dark text-decoration-none">
                                 <small>+1 8048689796</small>
                             </a>
                         </div>
@@ -372,6 +498,94 @@ els.recordBtn.ontouchstart = (e)=>{ e.preventDefault(); startRecording(); };
 els.recordBtn.ontouchend = (e)=>{ e.preventDefault(); stopRecording(); };
 // Uncheck all RAG Source checkboxes on page load
 document.querySelectorAll('.rag-source-card .form-check-input').forEach(cb => cb.checked = false);
+
+/* --- Message Status Popup Logic --- */
+const msgData = {
+    yellow: {
+        title: "In Progress Messages",
+        messages: [
+            "Message queued for sending.",
+            "Awaiting network confirmation.",
+            "Retrying delivery."
+        ]
+    },
+    green: {
+        title: "Sent Messages",
+        messages: [
+            "Message sent successfully.",
+            "Delivery confirmed.",
+            "Recipient notified."
+        ]
+    },
+    blue: {
+        title: "Received Messages",
+        messages: [
+            "Message received from contact.",
+            "Read by recipient.",
+            "Reply pending."
+        ]
+    }
+};
+
+// Set badge counts dynamically
+document.querySelectorAll('.msg-btn').forEach(btn => {
+    const cat = btn.getAttribute('data-category');
+    const badge = btn.querySelector('.msg-badge');
+    if (badge && msgData[cat]) {
+        badge.textContent = msgData[cat].messages.length;
+    }
+});
+
+let popupTimeout = null;
+function showMsgPopup(btn, category) {
+    hideMsgPopup();
+    const data = msgData[category];
+    if (!data) return;
+    const popup = document.createElement('div');
+    popup.className = 'msg-popup';
+    popup.innerHTML = `
+        <div class="popup-title">${data.title}</div>
+        <ul>${data.messages.map(m => `<li>${m}</li>`).join('')}</ul>
+    `;
+    document.body.appendChild(popup);
+
+    // Position popup
+    const rect = btn.getBoundingClientRect();
+    popup.style.left = (rect.left + rect.width/2) + "px";
+    popup.style.top = (rect.bottom + window.scrollY + 8) + "px";
+    setTimeout(() => popup.classList.add('show'), 10);
+
+    btn._popup = popup;
+}
+
+function hideMsgPopup() {
+    document.querySelectorAll('.msg-popup').forEach(popup => {
+        popup.classList.remove('show');
+        setTimeout(() => popup.remove(), 200);
+    });
+}
+
+// Attach events to buttons
+document.querySelectorAll('.msg-btn').forEach(btn => {
+    const cat = btn.getAttribute('data-category');
+    btn.addEventListener('mouseenter', () => {
+        clearTimeout(popupTimeout);
+        showMsgPopup(btn, cat);
+    });
+    btn.addEventListener('mouseleave', () => {
+        popupTimeout = setTimeout(hideMsgPopup, 120);
+    });
+    btn.addEventListener('focus', () => showMsgPopup(btn, cat));
+    btn.addEventListener('blur', hideMsgPopup);
+});
+
+// Hide popup if mouse leaves popup itself
+document.body.addEventListener('mouseover', e => {
+    if (!e.target.classList.contains('msg-popup') &&
+        !e.target.classList.contains('msg-btn')) {
+        hideMsgPopup();
+    }
+});
 </script>
 </body>
 </html>

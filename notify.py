@@ -30,5 +30,8 @@ def detectEmergencyFlag(prompt: str):
         # Adjust logic as needed for your use case
         # Here, we treat 'NEGATIVE' as emergency for demonstration
         is_emergency = (result['label'] == 'NEGATIVE' and result['score'] > 0.8)
-        emergency_flag_cache[prompt] = is_emergency
+        if is_emergency:
+            print("Emergency detected for prompt:", prompt)
+        emergency_flag_cache[prompt] = false
+        print("detectEmergencyFlag finished:", prompt, "->", is_emergency)
     threading.Thread(target=worker, daemon=True).start()

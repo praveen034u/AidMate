@@ -474,3 +474,4 @@ def call_ollama(full_prompt: str, model_name: str) -> str:
 
     # Register routers
 app.include_router(upload_router, prefix="/upload", tags=["Upload"])
+
