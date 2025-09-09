@@ -14,6 +14,7 @@ UPLOAD_DIR = "uploads"
 INDEX_PATH = Path("./vectordb")
 ALLOWED_EXTENSIONS = {".pdf", ".txt", ".csv"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+BASE_DIR = Path(__file__).resolve().parent
 
 router = APIRouter()
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -25,11 +26,23 @@ def validate_file(file: UploadFile) -> bool:
 def generate_unique_filename(original_filename: str) -> str:
     return f"{uuid.uuid4()}{Path(original_filename).suffix}"
 
-def list_files(directory):
-    return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+# def list_files(directory):
+#     return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+
+def list_files(documentPath: str) -> List[Path]:
+    """Return only valid files from a directory, ignoring dirs & hidden files."""
+    path = Path(documentPath)
+    if not path.exists() or not path.is_dir():
+        print(f"[Index] Path does not exist or is not a directory: {documentPath}")
+        return []
+
+    return [
+        f for f in path.rglob("*")
+        if f.is_file() and not f.name.startswith(".")  # keep Path objects only
+    ]
 
 def load_documents_from_files(documenPath) -> List[Document]:
-    files = [Path(documenPath) / f for f in list_files(UPLOAD_DIR)]
+    files = list_files(documenPath)
     docs: List[Document] = []
     for file in files:
         try:
@@ -46,8 +59,10 @@ def load_documents_from_files(documenPath) -> List[Document]:
             print(f"[Index] Failed to load {file}: {e}")
     return docs
 
-def create_vector_db_from_files(documenPath,vectorPath):
+def create_vector_db_from_files(documenPath,vectorPath,crisis):
+    print("Creating vector DB from files... ")
     from app import get_embeddings, reset_vectorstore_cache, OLLAMA_EMBED_MODEL
+    print("Using documenPath:", documenPath)
     docs = load_documents_from_files(documenPath)
     if not docs:
         raise ValueError("No documents loaded.")
@@ -55,7 +70,7 @@ def create_vector_db_from_files(documenPath,vectorPath):
     vectorstore = FAISS.from_documents(docs, embeddings)
     os.makedirs(vectorPath, exist_ok=True)
     vectorstore.save_local(str(vectorPath))
-    reset_vectorstore_cache()
+    reset_vectorstore_cache(crisis)
     return True
 
 # --- Models ---
@@ -66,8 +81,8 @@ class AlertJsonBody(BaseModel):
     issued_at: str
     expires_at: Optional[str] = None
     region: List[str]
-    lat: float
-    lon: float
+    lat: Optional[float] = None
+    lon: Optional[float] = None
     severity: str
     language: str
     url: str
@@ -82,12 +97,18 @@ def upload_file(file: UploadFile = File(...)):
             detail=f"File type not allowed. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
         )
     unique_filename = generate_unique_filename(file.filename)
-    file_path = os.path.join(UPLOAD_DIR, unique_filename)
+    directoryPath = os.path.join(UPLOAD_DIR,"files")
+    os.makedirs(directoryPath, exist_ok=True)
+
+    file_path = os.path.join(directoryPath, unique_filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
     mime_type = mimetypes.guess_type(file.filename)[0]
-    if create_vector_db_from_files(UPLOAD_DIR,INDEX_PATH):
+    vectorDbPath = os.path.join(INDEX_PATH, "files")   
+    os.makedirs(vectorDbPath, exist_ok=True)
+    print("Vector DB directory ensured:", vectorDbPath)
+    if create_vector_db_from_files(directoryPath,vectorDbPath,"files"):
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
             content={
@@ -115,32 +136,35 @@ def upload_file_json(body: AlertJsonBody):
 
     print("Creating directory for crisis:", crisis)
 
-    directoryPath = UPLOAD_DIR + "/json/" +crisis
+    print("Base directory:", BASE_DIR)
 
-    print ("Directory path:", directoryPath)
-   
-    # os.makedirs(directoryPath, exist_ok=True) 
-    #print("Directory created:", directoryPath)
-    file_path = os.path.join(directoryPath, file_name)   
+    directoryPath = os.path.join(BASE_DIR, UPLOAD_DIR, "json", crisis)
+    print("Directory path:", directoryPath)
+
+    os.makedirs(directoryPath, exist_ok=True)
+    print("Directory created/ensured:", directoryPath)
+
+    file_path = os.path.join(directoryPath, file_name)
     print("File path:", file_path)
-    # Check if file exists
+
+    # ✅ Now you can safely create the file
     if not os.path.exists(file_path):
-        # Create the file
         with open(file_path, "w", encoding="utf-8") as f:
             f.write("")   # create empty file
         print("File created:", file_path)
     else:
         print("File already exists:", file_path)
 
+
     with open(file_path, "a", encoding="utf-8") as f:
         f.write(text + "\n")
     print("Text appended to file.")
    
     # Update vector DB
-    vectorDbPath = os.path.join(INDEX_PATH,"/",crisis)
+    vectorDbPath = os.path.join(INDEX_PATH, crisis)   
     os.makedirs(vectorDbPath, exist_ok=True)
     print("Vector DB directory ensured:", vectorDbPath)
-    create_vector_db_from_files(directoryPath,vectorDbPath)
+    create_vector_db_from_files(directoryPath,vectorDbPath,crisis)
     print("Vector DB updated.")
  
 

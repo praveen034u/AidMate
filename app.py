@@ -185,16 +185,19 @@ def get_embeddings() -> OllamaEmbeddings:
         _EMBEDDINGS = OllamaEmbeddings(model=OLLAMA_EMBED_MODEL)
     return _EMBEDDINGS
 
-def load_vectorstore_if_exists() -> Optional[FAISS]:
+def load_vectorstore_if_exists(crisis: str) -> Optional[FAISS]:
     global _VECTORSTORE
     if _VECTORSTORE is not None:
         return _VECTORSTORE
-    # Load if index exists
-    if any(INDEX_PATH.glob("*")):
+
+    # Build path as Path object
+    vectordbPath = Path(INDEX_PATH) / crisis  
+
+    if vectordbPath.exists() and any(vectordbPath.glob("*")):
         try:
             emb = get_embeddings()
             _VECTORSTORE = FAISS.load_local(
-                str(INDEX_PATH),
+                str(vectordbPath),
                 emb,
                 allow_dangerous_deserialization=True
             )
@@ -204,10 +207,10 @@ def load_vectorstore_if_exists() -> Optional[FAISS]:
             return None
     return None
 
-def reset_vectorstore_cache():
+def reset_vectorstore_cache(crisis: str):
     global _VECTORSTORE
     _VECTORSTORE = None
-    load_vectorstore_if_exists()
+    load_vectorstore_if_exists(crisis)
 
 # -------------------------
 # FastAPI app
@@ -221,6 +224,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 class AskBody(BaseModel):
     prompt: str
+    crisis: Optional[str] = None
     # Keep external default "gpt-oss" but alias to a light Ollama model internally
     model: str = "gpt-oss"
     system: Optional[str] = (
@@ -251,9 +255,10 @@ def health():
 def ask(body: AskBody, x_session_id: Optional[str] = Header(default="")):
     print("Ask:", body.prompt)
     print("Session:", x_session_id or "(new)")
+    print("Crisis:",  body.crisis)
     
     # Start emergency flag detection in background (non-blocking)
-    detectEmergencyFlag(body.prompt)
+   # detectEmergencyFlag(body.prompt)
 
     # Render history if session ID provided
     history = render_history(x_session_id)
@@ -262,7 +267,7 @@ def ask(body: AskBody, x_session_id: Optional[str] = Header(default="")):
     requested_model = resolve_chat_model(body.model)
 
     # If vector index is present, use RAG; otherwise fall back to plain LLM
-    vector = load_vectorstore_if_exists()
+    vector = load_vectorstore_if_exists(body.crisis)
     if vector is not None:
         reply = call_rag(body.prompt, requested_model, vector)
     else:
@@ -451,6 +456,7 @@ def setup_rag_chain(model_name: str, vector_store: FAISS):
     return chain
 
 def call_rag(user_prompt: str, model_name: str, vector_store: FAISS) -> str:
+    print("Rag is called")
     rag_chain = setup_rag_chain(model_name, vector_store)
     return (rag_chain.invoke(user_prompt) or "").strip()
 
