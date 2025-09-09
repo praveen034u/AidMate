@@ -4,6 +4,7 @@ from typing import Dict
 
 # In-memory cache for emergency flags (prompt: bool)
 emergency_flag_cache: Dict[str, bool] = {}
+#status inprogress, sent, failed
 
 # Path to local DistilBERT model directory (downloaded via presetup.py)
 LOCAL_MODEL_DIR = "./models/distilbert-base-uncased-finetuned-sst-2-english"

@@ -28,8 +28,8 @@ def generate_unique_filename(original_filename: str) -> str:
 def list_files(directory):
     return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
 
-def load_documents_from_files() -> List[Document]:
-    files = [Path(UPLOAD_DIR) / f for f in list_files(UPLOAD_DIR)]
+def load_documents_from_files(documenPath) -> List[Document]:
+    files = [Path(documenPath) / f for f in list_files(UPLOAD_DIR)]
     docs: List[Document] = []
     for file in files:
         try:
@@ -46,15 +46,15 @@ def load_documents_from_files() -> List[Document]:
             print(f"[Index] Failed to load {file}: {e}")
     return docs
 
-def create_vector_db_from_files():
+def create_vector_db_from_files(documenPath,vectorPath):
     from app import get_embeddings, reset_vectorstore_cache, OLLAMA_EMBED_MODEL
-    docs = load_documents_from_files()
+    docs = load_documents_from_files(documenPath)
     if not docs:
         raise ValueError("No documents loaded.")
     embeddings = get_embeddings()
     vectorstore = FAISS.from_documents(docs, embeddings)
-    os.makedirs(INDEX_PATH, exist_ok=True)
-    vectorstore.save_local(str(INDEX_PATH))
+    os.makedirs(vectorPath, exist_ok=True)
+    vectorstore.save_local(str(vectorPath))
     reset_vectorstore_cache()
     return True
 
@@ -87,7 +87,7 @@ def upload_file(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
 
     mime_type = mimetypes.guess_type(file.filename)[0]
-    if create_vector_db_from_files():
+    if create_vector_db_from_files(UPLOAD_DIR,INDEX_PATH):
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
             content={
@@ -100,22 +100,55 @@ def upload_file(file: UploadFile = File(...)):
 
 @router.post("/json")
 def upload_file_json(body: AlertJsonBody):
-    unique_filename = generate_unique_filename("alert.json")
-    file_path = Path(UPLOAD_DIR) / unique_filename
-    file_path.write_text(json.dumps(body.dict(), indent=2, ensure_ascii=False), encoding="utf-8")
+    print("Received JSON body:", body)  
+    crisis = body.crisis
+    print("Crisis:", crisis)
+    text = body.text
+    print("Text:", text)
 
-    docs = [Document(page_content=body.text, metadata=body.dict())]
-    from app import get_embeddings, reset_vectorstore_cache
-    embeddings = get_embeddings()
-    vectorstore = FAISS.from_documents(docs, embeddings)
-    vectorstore.save_local(str(INDEX_PATH))
-    reset_vectorstore_cache()
+    if not crisis or not text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing required fields 'crisis' or 'text'."
+        )
+    file_name = "data.txt"  
+
+    print("Creating directory for crisis:", crisis)
+
+    directoryPath = UPLOAD_DIR + "/json/" +crisis
+
+    print ("Directory path:", directoryPath)
+   
+    # os.makedirs(directoryPath, exist_ok=True) 
+    #print("Directory created:", directoryPath)
+    file_path = os.path.join(directoryPath, file_name)   
+    print("File path:", file_path)
+    # Check if file exists
+    if not os.path.exists(file_path):
+        # Create the file
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write("")   # create empty file
+        print("File created:", file_path)
+    else:
+        print("File already exists:", file_path)
+
+    with open(file_path, "a", encoding="utf-8") as f:
+        f.write(text + "\n")
+    print("Text appended to file.")
+   
+    # Update vector DB
+    vectorDbPath = os.path.join(INDEX_PATH,"/",crisis)
+    os.makedirs(vectorDbPath, exist_ok=True)
+    print("Vector DB directory ensured:", vectorDbPath)
+    create_vector_db_from_files(directoryPath,vectorDbPath)
+    print("Vector DB updated.")
+ 
 
     return JSONResponse(
         status_code=201,
         content={
-            "message": "Alert uploaded successfully",
-            "filename": unique_filename,
+            "message": "json data  uploaded successfully",
+            "filename": file_name,
             "file_path": str(file_path),
             "id": body.id,
             "crisis": body.crisis,
