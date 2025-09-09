@@ -1,66 +1,226 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>AidMate Voice</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 720px; margin: 24px auto; padding: 0 12px; }
-  textarea { width: 100%; height: 100px; }
-  button { padding: 8px 12px; margin-right: 6px; }
-  #ans { white-space: pre-wrap; background: #f6f6f7; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
-  .row { display:flex; gap:8px; align-items:center; margin:8px 0; flex-wrap: wrap; }
-  .muted { color:#666; font-size: 12px; }
-  label { user-select: none; }
-</style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AidMate (Voice)- AI Assistant</title>
+    <meta name="description" content="Voice-enabled AI assistant for emergency and healthcare support"/>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet"/>
+
+    <style>
+        :root {
+            --medical-teal: #1d7a8c;
+            --medical-teal-light: #2596be;
+            --emergency-orange: #ff6b35;
+            --emergency-orange-light: #ff8c65;
+            --warning-amber: #ffa726;
+            --bg-light: #fefefe;
+        }
+        body { background-color: var(--bg-light); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .medical-header { background: linear-gradient(135deg, var(--medical-teal), var(--medical-teal-light)); color: white; box-shadow: 0 2px 10px rgba(29, 122, 140, 0.1); }
+        .btn-medical { background-color: var(--medical-teal); border-color: var(--medical-teal); color: white; }
+        .btn-medical:hover { background-color: var(--medical-teal-light); border-color: var(--medical-teal-light); color: white; }
+        .btn-warning-custom { background-color: var(--warning-amber); border-color: var(--warning-amber); color: white; }
+        .btn-warning-custom:hover { background-color: #ff9800; border-color: #ff9800; color: white; }
+        .help-support-card, .rag-source-card { color: white; border: none; }
+        .help-support-card { background: linear-gradient(135deg, var(--medical-teal), var(--medical-teal-light)); }
+        .rag-source-card { background: linear-gradient(135deg, var(--emergency-orange), var(--emergency-orange-light)); }
+        .answer-card { background: white; border: 1px solid #e9ecef; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .audio-player { background: white; border: 1px solid #dee2e6; border-radius: .5rem; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
+        .recording-pulse { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%{opacity:1} 50%{opacity:.5} 100%{opacity:1} }
+        .progress-custom { height: 6px; background-color: #e9ecef; }
+        .progress-bar-custom { background-color: var(--medical-teal); }
+        .emergency-checkbox { accent-color: white; }
+        .main-textarea { min-height: 120px; resize: vertical; border: 1px solid #ced4da; border-radius: .5rem; }
+        .main-textarea:focus { border-color: var(--medical-teal); box-shadow: 0 0 0 .2rem rgba(29,122,140,.25); }
+        .answer-content { max-height: 400px; overflow-y: auto; }
+        .answer-content::-webkit-scrollbar { width: 6px; }
+        .answer-content::-webkit-scrollbar-track { background:#f1f1f1; border-radius:3px; }
+        .answer-content::-webkit-scrollbar-thumb { background: var(--medical-teal); border-radius:3px; }
+        @media (max-width: 768px) { .btn-group-mobile { flex-direction: column; gap: .5rem; } .btn-group-mobile .btn { width: 100%; } }
+    </style>
 </head>
 <body>
-<h1>AidMate (Voice)</h1>
-<div class="muted">Local: Ollama + Whisper.cpp + Piper</div>
+<header class="medical-header py-3 mb-4">
+    <div class="container">
+        <h1 class="h2 mb-1 fw-bold"><i class="bi bi-mic-fill me-2"></i>AidMate (Voice)</h1>
+        <p class="mb-0 opacity-75"><small>Local: Ollama + Whisper.cpp + Piper</small></p>
+    </div>
+</header>
 
-<div class="row">
-  <textarea id="prompt" placeholder="Type or press 'Hold to Record' and speak..."></textarea>
-</div>
-<div class="row">
-  <button id="ask">Ask</button>
-  <button id="speak" disabled>Speak Reply</button>
-  <button id="hold">Hold to Record</button>
-  <label><input type="checkbox" id="handsfree"> Hands-free</label>
-  <span id="status" class="muted"></span>
-</div>
+<main class="container mb-5">
+    <div class="row g-4">
+        <!-- Left Section -->
+        <section class="col-lg-8">
+            <!-- Query -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <label for="queryInput" class="form-label fw-semibold">Ask your question:</label>
+                    <textarea id="queryInput" class="form-control main-textarea" placeholder="Ask your question here..." aria-label="Medical query input"></textarea>
 
-<h3>Answer</h3>
-<div id="ans">—</div>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+                        <div class="btn-group-mobile d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-medical" id="askBtn">
+                                <i class="bi bi-send me-1"></i> Ask
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="speakBtn">
+                                <i class="bi bi-volume-up me-1"></i> Speak Reply
+                            </button>
+                            <button type="button" class="btn btn-warning-custom" id="recordBtn"
+                                    onmousedown="startRecording()" onmouseup="stopRecording()" onmouseleave="stopRecording()"
+                                    ontouchstart="startRecording()" ontouchend="stopRecording()">
+                                <i class="bi bi-mic" id="micIcon"></i> Hold to Record
+                            </button>
+                        </div>
+                        <div class="form-check ms-auto">
+                            <input class="form-check-input" type="checkbox" id="handsFree">
+                            <label class="form-check-label fw-medium" for="handsFree">Hands-free</label>
+                        </div>
+                        <span id="status" class="text-muted small ms-2"></span>
+                    </div>
+                </div>
+            </div>
 
-<audio id="player" controls style="margin-top:12px; width:100%; display:none;"></audio>
+            <!-- Answer -->
+            <div class="card answer-card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0 fw-semibold"><i class="bi bi-chat-dots me-2"></i> Answer</h5>
+                </div>
+                <div class="card-body">
+                    <div id="answerContent" class="answer-content">
+                        — 
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio player -->
+            <div class="audio-player p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <button type="button" class="btn btn-outline-primary btn-sm rounded-circle" id="playBtn"
+                            style="width:40px;height:40px;">
+                        <i class="bi bi-play-fill" id="playIcon"></i>
+                    </button>
+                    <div class="flex-grow-1">
+                        <div class="progress progress-custom">
+                            <div class="progress-bar progress-bar-custom" id="progressBar" role="progressbar"
+                                 style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1 text-muted">
+                        <i class="bi bi-volume-down"></i>
+                        <small id="timeLabel">0:00 / 0:00</small>
+                    </div>
+                </div>
+                <audio id="player" preload="none" style="display:none;"></audio>
+            </div>
+        </section>
+
+        <!-- Right Section -->
+        <aside class="col-lg-4">
+            <div class="card help-support-card mb-4">
+                <div class="card-header border-0 pb-2">
+                    <h5 class="card-title mb-0 text-white"><i class="bi bi-headset me-2"></i> Help Support</h5>
+                </div>
+                <div class="card-body pt-2">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-chat-square-text me-2"></i>
+                        <div>
+                            <div class="fw-semibold">Message Status:</div>
+                            <small class="opacity-75">Mode: SMS</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-telephone me-2"></i>
+                        <div>
+                            <div class="fw-semibold">Emergency Contact</div>
+                            <a href="tel:+18048689796" class="text-white text-decoration-none">
+                                <small>+1 8048689796</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card rag-source-card">
+                <div class="card-header border-0 pb-2">
+                    <h5 class="card-title mb-0 text-white"><i class="bi bi-database me-2"></i> RAG Source</h5>
+                </div>
+                <div class="card-body pt-2">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input emergency-checkbox" type="checkbox" id="earthquake" checked>
+                        <label class="form-check-label text-white fw-medium" for="earthquake">Earthquake</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input emergency-checkbox" type="checkbox" id="hurricane" checked>
+                        <label class="form-check-label text-white fw-medium" for="hurricane">Hurricane</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input emergency-checkbox" type="checkbox" id="wildfire" checked>
+                        <label class="form-check-label text-white fw-medium" for="wildfire">Wildfire</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input emergency-checkbox" type="checkbox" id="flood" checked>
+                        <label class="form-check-label text-white fw-medium" for="flood">Flood</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input emergency-checkbox" type="checkbox" id="severeWeather" checked>
+                        <label class="form-check-label text-white fw-medium" for="severeWeather">Severe Weather</label>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</main>
+
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-const API = "http://localhost:8000";
+const API = "http://localhost:7860"; // Adjust if your backend runs on a different port
 const sessionId = crypto.randomUUID();
 
 const els = {
-  prompt: document.getElementById("prompt"),
-  ask: document.getElementById("ask"),
-  speak: document.getElementById("speak"),
-  hold: document.getElementById("hold"),
-  ans: document.getElementById("ans"),
-  player: document.getElementById("player"),
+  queryInput: document.getElementById("queryInput"),
+  askBtn: document.getElementById("askBtn"),
+  speakBtn: document.getElementById("speakBtn"),
+  recordBtn: document.getElementById("recordBtn"),
+  handsFree: document.getElementById("handsFree"),
   status: document.getElementById("status"),
-  handsfree: document.getElementById("handsfree"),
+  answerContent: document.getElementById("answerContent"),
+  player: document.getElementById("player"),
+  playBtn: document.getElementById("playBtn"),
+  playIcon: document.getElementById("playIcon"),
+  progressBar: document.getElementById("progressBar"),
+  timeLabel: document.getElementById("timeLabel"),
+  micIcon: document.getElementById("micIcon"),
+  audioPlayerDiv: document.querySelector('.audio-player.p-3'),
 };
 
-els.player.addEventListener("ended", () => {
-  if (els.handsfree.checked) {
-    // after speaking finishes, auto start listening again
-    startRecording().catch(console.error);
-  }
-});
+let audioUrl = "";
+let lastAnswer = "";
+let recording = false;
+let mediaRecorder, chunks = [];
 
-els.ask.onclick = async () => {
-  const text = els.prompt.value.trim();
+// Hide audio player initially
+if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
+
+/* --- Answer API --- */
+els.askBtn.onclick = async () => {
+  const text = els.queryInput.value.trim();
   if (!text) return;
-  els.ans.textContent = "Thinking…";
-  els.speak.disabled = true; els.player.style.display = "none";
+  els.answerContent.textContent = "Thinking…";
+  els.speakBtn.disabled = true;
+  els.status.textContent = "";
+  audioUrl = "";
+  lastAnswer = "";
+
+  // Hide audio player when asking a new question
+  if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
 
   const res = await fetch(API + "/ask", {
     method: "POST",
@@ -68,28 +228,81 @@ els.ask.onclick = async () => {
     body: JSON.stringify({ prompt: text })
   }).then(r => r.json()).catch(e => ({error: e+""}));
 
-  if (res.error) { els.ans.textContent = "Error: " + res.error; return; }
-  els.ans.textContent = res.answer || "(no answer)";
-  els.speak.disabled = !res.answer;
+  if (res.error) { els.answerContent.textContent = "Error: " + res.error; return; }
+  els.answerContent.textContent = res.answer || "(no answer)";
+  lastAnswer = res.answer || "";
+  els.speakBtn.disabled = !lastAnswer;
+
+  // Hide audio player if no answer
+  if (!lastAnswer && els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
 
   // hands-free: speak automatically
-  if (els.handsfree.checked && res.answer) {
-    await els.speak.onclick();
+  if (els.handsFree.checked && lastAnswer) {
+    await speakReply();
   }
 };
 
-els.speak.onclick = async () => {
-  const text = els.ans.textContent.trim();
+/* --- TTS API --- */
+async function speakReply() {
+  const text = els.answerContent.textContent.trim();
   if (!text) return;
   const fd = new FormData(); fd.append("text", text);
   const data = await fetch(API + "/tts", { method: "POST", body: fd }).then(r => r.json());
   if (data.audio_url) {
-    els.player.src = API + data.audio_url;
+    audioUrl = API + data.audio_url;
+    els.player.src = audioUrl;
     els.player.style.display = "block";
-    await els.player.play().catch(()=>{ /* autoplay may require user gesture first */ });
+    if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "block";
+    els.player.play().catch(()=>{});
+    updateAudioUI();
+  } else {
+    // Hide audio player if no audio returned
+    if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
+  }
+}
+els.speakBtn.onclick = speakReply;
+
+/* --- Audio Player Controls --- */
+els.playBtn.onclick = () => {
+  if (!audioUrl) return;
+  if (els.player.paused) {
+    els.player.play();
+    els.playIcon.classList.remove("bi-play-fill");
+    els.playIcon.classList.add("bi-pause-fill");
+  } else {
+    els.player.pause();
+    els.playIcon.classList.remove("bi-pause-fill");
+    els.playIcon.classList.add("bi-play-fill");
   }
 };
+els.player.onplay = () => {
+  els.playIcon.classList.remove("bi-play-fill");
+  els.playIcon.classList.add("bi-pause-fill");
+};
+els.player.onpause = () => {
+  els.playIcon.classList.remove("bi-pause-fill");
+  els.playIcon.classList.add("bi-play-fill");
+};
+els.player.ontimeupdate = updateAudioUI;
+els.player.onended = () => {
+  els.playIcon.classList.remove("bi-pause-fill");
+  els.playIcon.classList.add("bi-play-fill");
+  if (els.handsFree.checked) {
+    startRecording();
+  }
+};
+function updateAudioUI() {
+  const cur = els.player.currentTime || 0;
+  const dur = els.player.duration || 0;
+  els.progressBar.style.width = dur ? ((cur/dur)*100).toFixed(1) + "%" : "0%";
+  els.timeLabel.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
+}
+function formatTime(t) {
+  t = Math.floor(t);
+  return `${Math.floor(t/60)}:${(t%60).toString().padStart(2,"0")}`;
+}
 
+/* --- STT API (recording) --- */
 function pickMime() {
   const candidates = [
     'audio/webm;codecs=opus',
@@ -101,45 +314,45 @@ function pickMime() {
   return '';
 }
 
-let mediaRecorder, chunks = [], recording = false;
-
 async function startRecording() {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const mimeType = pickMime();
+  if (recording) return;
   try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = pickMime();
     mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-  } catch (e) {
-    alert("MediaRecorder not supported: " + e); return;
-  }
-  chunks = [];
-  mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
-  mediaRecorder.onstop = async () => {
-    const chosenType = mediaRecorder.mimeType || 'audio/webm';
-    const ext = chosenType.includes('ogg') ? 'ogg' : 'webm';
-    const blob = new Blob(chunks, { type: chosenType });
+    chunks = [];
+    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      const chosenType = mediaRecorder.mimeType || 'audio/webm';
+      const ext = chosenType.includes('ogg') ? 'ogg' : 'webm';
+      const blob = new Blob(chunks, { type: chosenType });
 
-    els.status.textContent = "Transcribing…";
-    const fd = new FormData();
-    fd.append("file", blob, `speech.${ext}`);
-    const stt = await fetch(API + "/stt", { method: "POST", body: fd }).then(r => r.json()).catch(e => ({error:e+""}));
+      els.status.textContent = "Transcribing…";
+      const fd = new FormData();
+      fd.append("file", blob, `speech.${ext}`);
+      const stt = await fetch(API + "/stt", { method: "POST", body: fd }).then(r => r.json()).catch(e => ({error:e+""}));
 
-    if (stt.error) {
-      console.error(stt);
-      alert("STT error: " + (stt.detail || stt.error));
+      if (stt.error) {
+        console.error(stt);
+        alert("STT error: " + (stt.detail || stt.error));
+        els.status.textContent = "";
+        return;
+      }
+
+      els.queryInput.value = stt.text || "";
+      els.status.textContent = "Asking…";
+      await els.askBtn.onclick();
+
       els.status.textContent = "";
-      return;
-    }
-
-    els.prompt.value = stt.text || "";
-    els.status.textContent = "Asking…";
-    await els.ask.onclick();
-
-    // If hands-free, Speak will run in ask.onclick; otherwise user can press Speak
+    };
+    mediaRecorder.start();
+    recording = true;
+    els.status.textContent = "Recording… release to stop";
+    els.micIcon.classList.add("recording-pulse");
+  } catch (e) {
+    alert("Could not start recording: " + e);
     els.status.textContent = "";
-  };
-  mediaRecorder.start();
-  recording = true;
-  els.status.textContent = "Recording… release to stop";
+  }
 }
 
 function stopRecording() {
@@ -147,16 +360,18 @@ function stopRecording() {
     mediaRecorder.stop();
     mediaRecorder.stream.getTracks().forEach(t => t.stop());
     recording = false;
+    els.micIcon.classList.remove("recording-pulse");
   }
 }
 
-// Hold-to-talk buttons
-els.hold.onmousedown = () => startRecording().catch(console.error);
-els.hold.onmouseup   = stopRecording;
-els.hold.onmouseleave = () => { if (recording) stopRecording(); };
-// Touch
-els.hold.ontouchstart = (e)=>{ e.preventDefault(); startRecording().catch(console.error); };
-els.hold.ontouchend   = (e)=>{ e.preventDefault(); stopRecording(); };
+// Hold-to-talk events
+els.recordBtn.onmousedown = startRecording;
+els.recordBtn.onmouseup = stopRecording;
+els.recordBtn.onmouseleave = () => { if (recording) stopRecording(); };
+els.recordBtn.ontouchstart = (e)=>{ e.preventDefault(); startRecording(); };
+els.recordBtn.ontouchend = (e)=>{ e.preventDefault(); stopRecording(); };
+// Uncheck all RAG Source checkboxes on page load
+document.querySelectorAll('.rag-source-card .form-check-input').forEach(cb => cb.checked = false);
 </script>
 </body>
 </html>

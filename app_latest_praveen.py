@@ -6,7 +6,6 @@ from typing import Optional, Dict, List, Tuple
 import base64
 import mimetypes
 import requests
-from notify import detectEmergencyFlag, emergency_flag_cache
 
 from fastapi import FastAPI, Form, UploadFile, File, Header, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -22,8 +21,7 @@ from langchain.docstore.document import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-# Import upload routers
-from upload import router as upload_router
+
 # -------------------------
 # Config
 # -------------------------
@@ -233,10 +231,8 @@ class AskBody(BaseModel):
     )
 
 @app.get("/")
-async def root():
-    # Return the current emergency flag cache as JSON
-    return {"emergency_flag_cache": emergency_flag_cache}
-# ...existing code...
+def root():
+    return {"message": "Hi, I am live"}
 
 @app.get("/health")
 def health():
@@ -251,11 +247,7 @@ def health():
 def ask(body: AskBody, x_session_id: Optional[str] = Header(default="")):
     print("Ask:", body.prompt)
     print("Session:", x_session_id or "(new)")
-    
-    # Start emergency flag detection in background (non-blocking)
-    detectEmergencyFlag(body.prompt)
 
-    # Render history if session ID provided
     history = render_history(x_session_id)
     sys_prefix = (body.system + "\n\n") if body.system else ""
     convo = (history + "\n\n") if history else ""
@@ -409,6 +401,97 @@ def create_vector_db_from_files() -> bool:
     reset_vectorstore_cache()
     return True
 
+@app.post("/upload/file")
+def upload_file(file: UploadFile = File(...)):
+    try:
+        if not validate_file(file):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File type not allowed. Allowed types: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
+            )
+
+        unique_filename = generate_unique_filename(file.filename)
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        mime_type = mimetypes.guess_type(file.filename)[0]
+        if create_vector_db_from_files():
+            return JSONResponse(
+                status_code=status.HTTP_201_CREATED,
+                content={
+                    "message": "File uploaded successfully",
+                    "filename": unique_filename,
+                    "mime_type": mime_type,
+                    "file_path": file_path
+                }
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}")
+
+class UploadJsonBody(BaseModel):
+    filename: str
+    text: Optional[str] = None          # for .txt
+    content_base64: Optional[str] = None
+    mime_type: Optional[str] = None
+
+def _validate_json_upload(filename: str, byte_len: int) -> None:
+    ext = Path(filename).suffix.lower() or ".txt"
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File type not allowed. Allowed types: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
+        )
+    if byte_len > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail=f"File too large. Max {MAX_FILE_SIZE} bytes")
+
+@app.post("/upload/file-json")
+def upload_file_json(body: UploadJsonBody):
+    if not body.filename:
+        raise HTTPException(status_code=400, detail="filename is required")
+
+    ext = Path(body.filename).suffix.lower() or ".txt"
+    unique_filename = generate_unique_filename(body.filename)
+    file_path = Path(UPLOAD_DIR) / unique_filename
+
+    if body.text is not None and body.content_base64 is not None:
+        raise HTTPException(status_code=400, detail="Provide either text or content_base64, not both.")
+    if body.text is None and body.content_base64 is None:
+        raise HTTPException(status_code=400, detail="Provide text or content_base64.")
+
+    if body.text is not None:
+        if ext != ".txt":
+            raise HTTPException(status_code=400, detail="When using `text`, filename must have .txt extension.")
+        data = body.text.encode("utf-8")
+    else:
+        try:
+            data = base64.b64decode(body.content_base64 or "", validate=True)
+        except Exception:
+            raise HTTPException(status_code=400, detail="content_base64 is not valid base64.")
+        if not data:
+            raise HTTPException(status_code=400, detail="Decoded content is empty.")
+
+    _validate_json_upload(body.filename, len(data))
+    Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+    file_path.write_bytes(data)
+
+    if create_vector_db_from_files():
+        mime_type = body.mime_type or mimetypes.guess_type(body.filename)[0]
+        return JSONResponse(
+            status_code=201,
+            content={
+                "message": "File uploaded successfully (JSON)",
+                "filename": unique_filename,
+                "original_filename": body.filename,
+                "mime_type": mime_type,
+                "file_path": str(file_path),
+                "bytes": len(data),
+            },
+        )
+    raise HTTPException(status_code=500, detail="Vector DB update failed after upload.")
 
 # -------------------------
 # RAG + LLM calls (CPU-lean)
@@ -471,6 +554,3 @@ def call_ollama(full_prompt: str, model_name: str) -> str:
     r.raise_for_status()
     data = r.json()
     return (data.get("response") or "").strip()
-
-    # Register routers
-app.include_router(upload_router, prefix="/upload", tags=["Upload"])

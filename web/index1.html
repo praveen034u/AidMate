@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AidMate Voice</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 720px; margin: 24px auto; padding: 0 12px; }
+  textarea { width: 100%; height: 100px; }
+  button { padding: 8px 12px; margin-right: 6px; }
+  #ans { white-space: pre-wrap; background: #f6f6f7; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
+  .row { display:flex; gap:8px; align-items:center; margin:8px 0; flex-wrap: wrap; }
+  .muted { color:#666; font-size: 12px; }
+  label { user-select: none; }
+</style>
+</head>
+<body>
+<h1>AidMate (Voice)</h1>
+<div class="muted">Local: Ollama + Whisper.cpp + Piper</div>
+
+<div class="row">
+  <textarea id="prompt" placeholder="Type or press 'Hold to Record' and speak..."></textarea>
+</div>
+<div class="row">
+  <button id="ask">Ask</button>
+  <button id="speak" disabled>Speak Reply</button>
+  <button id="hold">Hold to Record</button>
+  <label><input type="checkbox" id="handsfree"> Hands-free</label>
+  <span id="status" class="muted"></span>
+</div>
+
+<h3>Answer</h3>
+<div id="ans">—</div>
+
+<audio id="player" controls style="margin-top:12px; width:100%; display:none;"></audio>
+
+<script>
+const API = "http://localhost:8000";
+const sessionId = crypto.randomUUID();
+
+const els = {
+  prompt: document.getElementById("prompt"),
+  ask: document.getElementById("ask"),
+  speak: document.getElementById("speak"),
+  hold: document.getElementById("hold"),
+  ans: document.getElementById("ans"),
+  player: document.getElementById("player"),
+  status: document.getElementById("status"),
+  handsfree: document.getElementById("handsfree"),
+};
+
+els.player.addEventListener("ended", () => {
+  if (els.handsfree.checked) {
+    // after speaking finishes, auto start listening again
+    startRecording().catch(console.error);
+  }
+});
+
+els.ask.onclick = async () => {
+  const text = els.prompt.value.trim();
+  if (!text) return;
+  els.ans.textContent = "Thinking…";
+  els.speak.disabled = true; els.player.style.display = "none";
+
+  const res = await fetch(API + "/ask", {
+    method: "POST",
+    headers: {"Content-Type":"application/json", "x-session-id": sessionId},
+    body: JSON.stringify({ prompt: text })
+  }).then(r => r.json()).catch(e => ({error: e+""}));
+
+  if (res.error) { els.ans.textContent = "Error: " + res.error; return; }
+  els.ans.textContent = res.answer || "(no answer)";
+  els.speak.disabled = !res.answer;
+
+  // hands-free: speak automatically
+  if (els.handsfree.checked && res.answer) {
+    await els.speak.onclick();
+  }
+};
+
+els.speak.onclick = async () => {
+  const text = els.ans.textContent.trim();
+  if (!text) return;
+  const fd = new FormData(); fd.append("text", text);
+  const data = await fetch(API + "/tts", { method: "POST", body: fd }).then(r => r.json());
+  if (data.audio_url) {
+    els.player.src = API + data.audio_url;
+    els.player.style.display = "block";
+    await els.player.play().catch(()=>{ /* autoplay may require user gesture first */ });
+  }
+};
+
+function pickMime() {
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/ogg'
+  ];
+  for (const m of candidates) if (MediaRecorder.isTypeSupported(m)) return m;
+  return '';
+}
+
+let mediaRecorder, chunks = [], recording = false;
+
+async function startRecording() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const mimeType = pickMime();
+  try {
+    mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+  } catch (e) {
+    alert("MediaRecorder not supported: " + e); return;
+  }
+  chunks = [];
+  mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+  mediaRecorder.onstop = async () => {
+    const chosenType = mediaRecorder.mimeType || 'audio/webm';
+    const ext = chosenType.includes('ogg') ? 'ogg' : 'webm';
+    const blob = new Blob(chunks, { type: chosenType });
+
+    els.status.textContent = "Transcribing…";
+    const fd = new FormData();
+    fd.append("file", blob, `speech.${ext}`);
+    const stt = await fetch(API + "/stt", { method: "POST", body: fd }).then(r => r.json()).catch(e => ({error:e+""}));
+
+    if (stt.error) {
+      console.error(stt);
+      alert("STT error: " + (stt.detail || stt.error));
+      els.status.textContent = "";
+      return;
+    }
+
+    els.prompt.value = stt.text || "";
+    els.status.textContent = "Asking…";
+    await els.ask.onclick();
+
+    // If hands-free, Speak will run in ask.onclick; otherwise user can press Speak
+    els.status.textContent = "";
+  };
+  mediaRecorder.start();
+  recording = true;
+  els.status.textContent = "Recording… release to stop";
+}
+
+function stopRecording() {
+  if (mediaRecorder && recording) {
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    recording = false;
+  }
+}
+
+// Hold-to-talk buttons
+els.hold.onmousedown = () => startRecording().catch(console.error);
+els.hold.onmouseup   = stopRecording;
+els.hold.onmouseleave = () => { if (recording) stopRecording(); };
+// Touch
+els.hold.ontouchstart = (e)=>{ e.preventDefault(); startRecording().catch(console.error); };
+els.hold.ontouchend   = (e)=>{ e.preventDefault(); stopRecording(); };
+</script>
+</body>
+</html>
