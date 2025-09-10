@@ -278,6 +278,10 @@
         <h5 class="card-title mb-0 text-white"><i class="bi bi-database me-2"></i> Emergency Alerts</h5>
     </div>
     <div class="card-body pt-2">
+      <div class="form-check">
+            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource"   id="general" value="files" checked>
+            <label class="form-check-label text-white fw-medium" for="general">General</label>
+        </div>
         <div class="form-check mb-2">
             <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="earthquake" value="earthquake">
             <label class="form-check-label text-white fw-medium" for="earthquake">Earthquake</label>
@@ -297,11 +301,8 @@
         <div class="form-check">
             <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="hurricane" value="hurricane">
             <label class="form-check-label text-white fw-medium" for="hurricane">Hurricane</label>
-        </div>        
-        <div class="form-check">
-            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" checked  id="general" value="files">
-            <label class="form-check-label text-white fw-medium" for="general">General</label>
-        </div>
+        </div>     
+        
     </div>
 </div>
 <!-- ...existing code... -->
@@ -709,7 +710,10 @@ async function pollMessageStatus() {
 pollMessageStatus();
 setInterval(pollMessageStatus, 5000);
 
-
+window.onload = function() {
+  // Select the radio button with the specific ID and set its checked property to true
+  document.getElementById("general").checked = true;
+};
 </script>
 </body>
 </html>
