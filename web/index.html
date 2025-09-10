@@ -27,43 +27,17 @@
         .btn-warning-custom { background-color: var(--warning-amber); border-color: var(--warning-amber); color: white; }
         .btn-warning-custom:hover { background-color: #ff9800; border-color: #ff9800; color: white; }
         .help-support-card, .rag-source-card { color: white; border: none; }
-       /* ...existing code... */
-.help-support-card {
-    background: #fff;
-    color: #1d7a8c;
-    border: 2px solid #1d7a8c;
-}
-.help-support-card .card-header {
-    background: #1d7a8c;
-    color: #fff;
-    border-bottom: none;
-}
-.rag-source-card {
-    background: #fff;
-    color: #ff6b35;
-    border: 2px solid #ff6b35;
-}
-.rag-source-card .card-header {
-    background: #ff6b35;
-    color: #fff;
-    border-bottom: none;
-}
-/* ...existing code... */
-.rag-source-card .form-check-input {
-    accent-color: #535555; /* matches Answer text color */
-    border: 2px solid #535555 !important;
-    box-shadow: none !important;
-}
-.rag-source-card .form-check-input:focus {
-    border-color: #535555!important;
-    box-shadow: 0 0 0 0.15rem rgba(221, 101, 46, 0.25) !important;
-}
-.rag-source-card .form-check-label {
-    color: #535555 !important; /* matches Answer text color */
-    font-weight: 500;
-}
-/* ...existing code... */
-/* ...existing code... */
+
+        /* existing card theme tweaks */
+        .help-support-card { background:#fff; color:#1d7a8c; border:2px solid #1d7a8c; }
+        .help-support-card .card-header { background:#1d7a8c; color:#fff; border-bottom:none; }
+        .rag-source-card { background:#fff; color:#ff6b35; border:2px solid #ff6b35; }
+        .rag-source-card .card-header { background:#ff6b35; color:#fff; border-bottom:none; }
+
+        .rag-source-card .form-check-input { accent-color:#535555; border:2px solid #535555 !important; box-shadow:none !important; }
+        .rag-source-card .form-check-input:focus { border-color:#535555!important; box-shadow:0 0 0 0.15rem rgba(221,101,46,0.25) !important; }
+        .rag-source-card .form-check-label { color:#535555 !important; font-weight:500; }
+
         .answer-card { background: white; border: 1px solid #e9ecef; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
         .audio-player { background: white; border: 1px solid #dee2e6; border-radius: .5rem; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
         .recording-pulse { animation: pulse 1s infinite; }
@@ -79,93 +53,61 @@
         .answer-content::-webkit-scrollbar-thumb { background: var(--medical-teal); border-radius:3px; }
         @media (max-width: 768px) { .btn-group-mobile { flex-direction: column; gap: .5rem; } .btn-group-mobile .btn { width: 100%; } }
 
-        /* --- Message Status Buttons & Popup --- */
-       /* ...existing code... */
-/* ...existing code... */
-.msg-btn {
-    position: relative;
-    margin-left: 2px;
-    margin-right: 2px;
-    min-width: 80px;
-    max-width: 100px;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    font-size: 0.85rem;
-    white-space: nowrap;
-    /* Remove overflow: hidden and text-overflow */
-}
-.msg-badge {
-    font-size: 0.85em;
-    top: 50%;
-    right: -12px; /* adjust as needed */
-    min-width: 24px;
-    height: 24px;
-    line-height: 22px;
-    background-color: #000 !important;
-    color: #fff !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
-    z-index: 2;
-    position: absolute;
-    transform: translateY(-50%);
-    pointer-events: none;
-}
-/* ...existing code... */
-        .msg-popup {
-            position: absolute;
-            left: 50%;
-            top: 120%;
-            transform: translateX(-50%);
-            min-width: 180px;
-            background: #fff;
-            color: #222;
-            border-radius: 8px;
-            box-shadow: 0 4px 18px rgba(0,0,0,0.13);
-            padding: 1rem;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-            font-size: 0.97rem;
-            border: 1px solid #e0e0e0;
-        }
-        .msg-popup.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .msg-popup .popup-title {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        .msg-popup ul {
-            padding-left: 1.1em;
-            margin: 0;
-            font-size: 0.96em;
-        }
-        .msg-popup li {
-            margin-bottom: 0.3em;
-        }
-        @media (max-width: 600px) {
-            .msg-popup { min-width: 120px; font-size: 0.92rem; }
-        }
+        /* Message Status Buttons & Popup */
+        .msg-btn { position:relative; margin:0 2px; min-width:80px; max-width:100px; padding:0 .5rem; font-size:.85rem; white-space:nowrap; }
+        .msg-badge { font-size:.85em; top:50%; right:-12px; min-width:24px; height:24px; line-height:22px; background:#000 !important; color:#fff !important; display:flex; align-items:center; justify-content:center; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,0.12); z-index:2; position:absolute; transform:translateY(-50%); pointer-events:none; }
+        .msg-popup { position:absolute; left:50%; top:120%; transform:translateX(-50%); min-width:180px; background:#fff; color:#222; border-radius:8px; box-shadow:0 4px 18px rgba(0,0,0,0.13); padding:1rem; z-index:1000; opacity:0; pointer-events:none; transition:opacity .2s; font-size:.97rem; border:1px solid #e0e0e0; }
+        .msg-popup.show { opacity:1; pointer-events:auto; }
+        .msg-popup .popup-title { font-weight:600; margin-bottom:.5rem; }
+        .msg-popup ul { padding-left:1.1em; margin:0; font-size:.96em; }
+        .msg-popup li { margin-bottom:.3em; }
+        @media (max-width: 600px) { .msg-popup { min-width:120px; font-size:.92rem; } }
+
+        /* Location UI */
+        .loc-pill { display:inline-flex; align-items:center; gap:.4rem; background: rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,.35); padding:.25rem .6rem; border-radius:999px; font-size:.85rem; }
+        .loc-warning { background:#fff3cd; border:1px solid #ffeeba; color:#856404; }
+        .loc-warning a { font-weight:600; }
     </style>
 </head>
 <body>
-<header class="medical-header py-3 mb-4">
-    <div class="container">
-        <h1 class="h2 mb-1 fw-bold"><i class="bi bi-mic-fill me-2"></i>AidMate (Voice)</h1>
-        <p class="mb-0 opacity-75"><small>AI that never drops the call — online or offline</small></p>
+<header class="medical-header py-3 mb-2">
+    <div class="container d-flex align-items-center justify-content-between">
+        <div>
+            <h1 class="h2 mb-1 fw-bold"><i class="bi bi-mic-fill me-2"></i>AidMate (Voice)</h1>
+            <p class="mb-0 opacity-75"><small>AI that never drops the call — online or offline</small></p>
+        </div>
+        <div>
+            <span id="locPill" class="loc-pill" title="Location status">
+                <i class="bi bi-geo-alt"></i>
+                <span id="locText">Location: checking…</span>
+            </span>
+        </div>
     </div>
 </header>
+
+<!-- Location warning banner -->
+<div id="locWarn" class="container" style="display:none;">
+  <div class="alert loc-warning d-flex align-items-center justify-content-between mt-2" role="alert">
+    <div>
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      For quicker, more accurate help, please enable your location.
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <div class="form-check form-switch me-2">
+        <input class="form-check-input" type="checkbox" role="switch" id="shareLocSwitch">
+        <label class="form-check-label" for="shareLocSwitch">Share location</label>
+      </div>
+      <button id="enableLocBtn" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-geo-alt"></i> Enable
+      </button>
+    </div>
+  </div>
+</div>
 
 <main class="container mb-5">
     <div class="row g-4">
         <!-- Left Section -->
         <section class="col-lg-8">
-            <!-- Query -->
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <label for="queryInput" class="form-label fw-semibold">Ask your question:</label>
@@ -185,32 +127,35 @@
                                 <i class="bi bi-mic" id="micIcon"></i> Hold to Record
                             </button>
                         </div>
-                        <div class="form-check ms-auto">
-                            <input class="form-check-input" type="checkbox" id="handsFree">
-                            <label class="form-check-label fw-medium" for="handsFree">Hands-free</label>
+
+                        <div class="ms-auto d-flex align-items-center gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="handsFree">
+                                <label class="form-check-label fw-medium" for="handsFree">Hands-free</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="shareLocSwitchInline">
+                                <label class="form-check-label fw-medium" for="shareLocSwitchInline">Share location</label>
+                            </div>
                         </div>
+
                         <span id="status" class="text-muted small ms-2"></span>
                     </div>
                 </div>
             </div>
 
-            <!-- Answer -->
             <div class="card answer-card mb-4">
                 <div class="card-header bg-light">
                     <h5 class="card-title mb-0 fw-semibold"><i class="bi bi-chat-dots me-2"></i> Answer</h5>
                 </div>
                 <div class="card-body">
-                    <div id="answerContent" class="answer-content">
-                        — 
-                    </div>
+                    <div id="answerContent" class="answer-content">—</div>
                 </div>
             </div>
 
-            <!-- Audio player -->
             <div class="audio-player p-3">
                 <div class="d-flex align-items-center gap-3">
-                    <button type="button" class="btn btn-outline-primary btn-sm rounded-circle" id="playBtn"
-                            style="width:40px;height:40px;">
+                    <button type="button" class="btn btn-outline-primary btn-sm rounded-circle" id="playBtn" style="width:40px;height:40px;">
                         <i class="bi bi-play-fill" id="playIcon"></i>
                     </button>
                     <div class="flex-grow-1">
@@ -242,70 +187,79 @@
                                 Message Status:
                             </div>
                             <small class="opacity-75">Mode: SMS</small>
-                            <!-- ...existing code... -->
-<div class="mt-2 d-flex gap-2 position-relative" style="overflow: visible;">
-    <button type="button" class="btn btn-sm btn-warning position-relative msg-btn" data-category="yellow" tabindex="0">
-        InProgress
-        <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
-    </button>
-    <button type="button" class="btn btn-sm btn-success position-relative msg-btn" data-category="green" tabindex="0">
-        Sent
-        <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
-    </button>
-    <button type="button" class="btn btn-sm btn-primary position-relative msg-btn" data-category="blue" tabindex="0">
-        Received
-        <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
-    </button>
-</div>
-<!-- ...existing code... -->
+
+                            <div class="mt-2 d-flex gap-2 position-relative" style="overflow: visible;">
+                                <button type="button" class="btn btn-sm btn-warning position-relative msg-btn" data-category="yellow" tabindex="0">
+                                    InProgress <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-success position-relative msg-btn" data-category="green" tabindex="0">
+                                    Sent <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary position-relative msg-btn" data-category="blue" tabindex="0">
+                                    Received <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
+                                </button>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- EDITABLE CONTACT: added block -->
                     <div class="d-flex align-items-center">
                         <i class="bi bi-telephone me-2"></i>
                         <div>
-                            <div class="fw-semibold">Emergency Contact</div>
-                            <a href="tel:+18048689796" class="text-dark text-decoration-none">
-                                <small>+1 8048689796</small>
-                            </a>
+                            <div class="fw-semibold d-flex align-items-center gap-2">
+                                Emergency Contact
+                                <button class="btn btn-sm btn-outline-secondary p-1" id="editContactBtn" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </div>
+                            <div id="contactDisplay">
+                                <a href="tel:+18048689796" class="text-dark text-decoration-none">
+                                    <small id="contactNumber">+1 8048689796</small>
+                                </a>
+                            </div>
+                            <div id="contactEdit" class="d-none">
+                                <input type="text" class="form-control form-control-sm mb-1" id="contactInput" value="+1 8048689796">
+                                <button class="btn btn-sm btn-success" id="saveContactBtn">
+                                    <i class="bi bi-check"></i> Save
+                                </button>
+                            </div>
                         </div>
                     </div>
+                    <!-- /editable contact -->
                 </div>
             </div>
 
-            <!-- ...existing code... -->
-<div class="card rag-source-card">
-    <div class="card-header border-0 pb-2">
-        <h5 class="card-title mb-0 text-white"><i class="bi bi-database me-2"></i> Emergency Alerts</h5>
-    </div>
-    <div class="card-body pt-2">
-      <div class="form-check">
-            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource"   id="general" value="files" checked>
-            <label class="form-check-label text-white fw-medium" for="general">General</label>
-        </div>
-        <div class="form-check mb-2">
-            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="earthquake" value="earthquake">
-            <label class="form-check-label text-white fw-medium" for="earthquake">Earthquake</label>
-        </div>
-        <div class="form-check mb-2">
-            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="fire" value="fire">
-            <label class="form-check-label text-white fw-medium" for="fire">Wildfire</label>
-        </div>
-        <div class="form-check mb-2">
-            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="severe_weather" value="severe_weather">
-            <label class="form-check-label text-white fw-medium" for="severe_weather">Severe Weather</label>
-        </div>
-        <div class="form-check mb-2">
-            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="flood" value="flood">
-            <label class="form-check-label text-white fw-medium" for="flood">Flood</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="hurricane" value="hurricane">
-            <label class="form-check-label text-white fw-medium" for="hurricane">Hurricane</label>
-        </div>     
-        
-    </div>
-</div>
-<!-- ...existing code... -->
+            <div class="card rag-source-card">
+                <div class="card-header border-0 pb-2">
+                    <h5 class="card-title mb-0 text-white"><i class="bi bi-database me-2"></i> Emergency Alerts</h5>
+                </div>
+                <div class="card-body pt-2">
+                    <div class="form-check">
+                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="general" value="files" checked>
+                        <label class="form-check-label text-white fw-medium" for="general">General</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="earthquake" value="earthquake">
+                        <label class="form-check-label text-white fw-medium" for="earthquake">Earthquake</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="fire" value="fire">
+                        <label class="form-check-label text-white fw-medium" for="fire">Wildfire</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="severe_weather" value="severe_weather">
+                        <label class="form-check-label text-white fw-medium" for="severe_weather">Severe Weather</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="flood" value="flood">
+                        <label class="form-check-label text-white fw-medium" for="flood">Flood</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="hurricane" value="hurricane">
+                        <label class="form-check-label text-white fw-medium" for="hurricane">Hurricane</label>
+                    </div>     
+                </div>
+            </div>
         </aside>
     </div>
 </main>
@@ -314,13 +268,12 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-const API = "http://localhost:7860"; // Adjust if your backend runs on a different port
+const API = "http://localhost:7860";
 const sessionId = crypto.randomUUID();
 
-// Helper to get selected rag source
 function getSelectedRagSource() {
-    const selected = document.querySelector('input[name="ragSource"]:checked');
-    return selected ? selected.value : "file";
+  const selected = document.querySelector('input[name="ragSource"]:checked');
+  return selected ? selected.value : "file";
 }
 
 const els = {
@@ -338,6 +291,20 @@ const els = {
   timeLabel: document.getElementById("timeLabel"),
   micIcon: document.getElementById("micIcon"),
   audioPlayerDiv: document.querySelector('.audio-player.p-3'),
+  /* Location */
+  locPill: document.getElementById("locPill"),
+  locText: document.getElementById("locText"),
+  locWarn: document.getElementById("locWarn"),
+  shareLocSwitch: document.getElementById("shareLocSwitch"),
+  shareLocSwitchInline: document.getElementById("shareLocSwitchInline"),
+  enableLocBtn: document.getElementById("enableLocBtn"),
+  /* Contact edit */
+  editContactBtn: document.getElementById("editContactBtn"),
+  contactDisplay: document.getElementById("contactDisplay"),
+  contactEdit: document.getElementById("contactEdit"),
+  contactNumber: document.getElementById("contactNumber"),
+  contactInput: document.getElementById("contactInput"),
+  saveContactBtn: document.getElementById("saveContactBtn"),
 };
 
 let audioUrl = "";
@@ -345,30 +312,156 @@ let lastAnswer = "";
 let recording = false;
 let mediaRecorder, chunks = [];
 
-// Hide audio player initially
+/* ================================
+   Live location (existing robust v2.2)
+   ================================ */
+let currentLocation = null;      // { lat, lon, accuracy }
+let locWatchId = null;
+let permState = 'prompt';
+let locWaitTimeoutId = null;
+
+function loadSavedLocation() {
+  try { const raw = localStorage.getItem("aidmate_last_location"); if (raw) currentLocation = JSON.parse(raw); } catch {}
+}
+function saveLocation(loc) {
+  currentLocation = loc;
+  try { localStorage.setItem("aidmate_last_location", JSON.stringify(loc)); } catch {}
+}
+function fmtLoc(loc) {
+  if (!loc) return "Location: allowed (waiting…)";
+  const acc = (typeof loc.accuracy === "number") ? ` • ±${Math.round(loc.accuracy)}m` : "";
+  return `Location: On (${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}${acc})`;
+}
+function setPill(text) { els.locText.textContent = text; }
+function updateLocUIFromState() {
+  const sharing = !!(els.shareLocSwitch?.checked || els.shareLocSwitchInline?.checked);
+  if (permState === 'denied') { setPill("Location: denied"); els.locWarn.style.display = "block"; return; }
+  if (currentLocation) { setPill(fmtLoc(currentLocation)); els.locWarn.style.display = sharing ? "none" : "block"; return; }
+  setPill(permState === 'granted' ? "Location: allowed (waiting…)" : "Location: searching…");
+  els.locWarn.style.display = sharing ? "none" : "block";
+}
+async function detectPermission() {
+  if (!window.isSecureContext && location.hostname !== "localhost") { setPill("Location: unavailable (use HTTPS or localhost)"); }
+  if (navigator.permissions?.query) {
+    try {
+      const p = await navigator.permissions.query({ name: 'geolocation' });
+      permState = p.state;
+      p.onchange = () => { permState = p.state; updateLocUIFromState(); if (permState === 'granted') startWatch(); };
+    } catch {}
+  }
+}
+function getOneFix(options) { return new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, options)); }
+function setWaitTimeout() {
+  if (locWaitTimeoutId) clearTimeout(locWaitTimeoutId);
+  locWaitTimeoutId = setTimeout(() => { if (!currentLocation && permState !== 'denied') setPill("Location: unavailable (check OS location)"); }, 20000);
+}
+async function startWatch() {
+  if (!("geolocation" in navigator)) { setPill("Location: unsupported"); els.locWarn.style.display = "block"; return; }
+  setWaitTimeout();
+  try {
+    const pos = await getOneFix({ enableHighAccuracy: false, maximumAge: 60000, timeout: 8000 });
+    const { latitude, longitude, accuracy } = pos.coords || {};
+    saveLocation({ lat: latitude, lon: longitude, accuracy: accuracy ?? null });
+    if (permState !== 'denied') permState = 'granted';
+    updateLocUIFromState();
+  } catch {}
+  if (locWatchId !== null) navigator.geolocation.clearWatch(locWatchId);
+  locWatchId = navigator.geolocation.watchPosition(
+    (pos) => { const { latitude, longitude, accuracy } = pos.coords || {};
+      saveLocation({ lat: latitude, lon: longitude, accuracy: accuracy ?? null });
+      if (permState !== 'denied') permState = 'granted'; updateLocUIFromState(); setWaitTimeout(); },
+    async (err) => {
+      if (err && err.code === err.PERMISSION_DENIED) { permState = 'denied'; updateLocUIFromState(); return; }
+      try {
+        const pos = await getOneFix({ enableHighAccuracy: false, maximumAge: 120000, timeout: 20000 });
+        const { latitude, longitude, accuracy } = pos.coords || {};
+        saveLocation({ lat: latitude, lon: longitude, accuracy: accuracy ?? null });
+        if (permState !== 'denied') permState = 'granted'; updateLocUIFromState();
+      } catch {
+        if (permState !== 'denied') {
+          setPill(currentLocation ? fmtLoc(currentLocation) : "Location: allowed (waiting…)");
+          const sharing = !!(els.shareLocSwitch?.checked || els.shareLocSwitchInline?.checked);
+          els.locWarn.style.display = sharing ? "none" : "block";
+        } else { setPill("Location: denied"); els.locWarn.style.display = "block"; }
+      }
+    },
+    { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 }
+  );
+}
+function syncLocationToggles(checked) {
+  if (els.shareLocSwitch) els.shareLocSwitch.checked = checked;
+  if (els.shareLocSwitchInline) els.shareLocSwitchInline.checked = checked;
+  updateLocUIFromState(); if (checked && permState !== 'denied') startWatch();
+}
+els.shareLocSwitch?.addEventListener("change", (e) => syncLocationToggles(e.target.checked));
+els.shareLocSwitchInline?.addEventListener("change", (e) => syncLocationToggles(e.target.checked));
+els.enableLocBtn?.addEventListener("click", () => { syncLocationToggles(true); startWatch(); });
+loadSavedLocation(); detectPermission().finally(() => { startWatch(); updateLocUIFromState(); });
+/* ================================ */
+
 if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
 
-/* --- Answer API --- */
+/* --------- Emergency contact edit (NEW) ---------- */
+function sanitizeForTel(s) { return (s || "").replace(/[^\d+]/g, ""); }
+function getSavedContact() {
+  const saved = localStorage.getItem("aidmate_contact");
+  return saved && saved.trim() ? saved.trim() : null;
+}
+function loadContactNo() {
+  const current = getSavedContact() || els.contactNumber.textContent.trim();
+  els.contactNumber.textContent = current;
+  els.contactInput.value = current;
+  const a = document.querySelector("#contactDisplay a");
+  if (a) a.href = "tel:" + sanitizeForTel(current);
+}
+els.editContactBtn.addEventListener("click", () => {
+  els.contactDisplay.classList.add("d-none");
+  els.contactEdit.classList.remove("d-none");
+  els.contactInput.focus();
+});
+els.saveContactBtn.addEventListener("click", () => {
+  const val = els.contactInput.value.trim();
+  if (!val) return;
+  els.contactNumber.textContent = val;
+  localStorage.setItem("aidmate_contact", val);
+  const a = document.querySelector("#contactDisplay a");
+  if (a) a.href = "tel:" + sanitizeForTel(val);
+  els.contactEdit.classList.add("d-none");
+  els.contactDisplay.classList.remove("d-none");
+});
+loadContactNo();
+/* -------------------------------------------------- */
+
+/* --- Ask API --- */
 els.askBtn.onclick = async () => {
   const text = els.queryInput.value.trim();
   if (!text) return;
   els.answerContent.textContent = "Thinking…";
   els.speakBtn.disabled = true;
   els.status.textContent = "";
-  audioUrl = "";
-  lastAnswer = "";
-
-  // Hide audio player when asking a new question
+  audioUrl = ""; lastAnswer = "";
   if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
 
-    // Get selected rag source
   const ragSource = getSelectedRagSource();
-  console.log("Selected RAG Source:", ragSource);
+
+  // include location only if sharing is enabled and we have coords
+  let locationPayload = null;
+  const share = (els.shareLocSwitch?.checked || els.shareLocSwitchInline?.checked);
+  if (share && currentLocation) locationPayload = { ...currentLocation };
+
+  // include contactNo
+  const contactNo = getSavedContact() || els.contactNumber.textContent.trim();
 
   const res = await fetch(API + "/ask", {
     method: "POST",
     headers: {"Content-Type":"application/json", "x-session-id": sessionId},
-    body: JSON.stringify({ prompt: text, crisis: ragSource, model: "gpt-oss" })
+    body: JSON.stringify({
+      prompt: text,
+      crisis: ragSource,
+      model: "gpt-oss",
+      location: locationPayload,
+      contactNo: contactNo
+    })
   }).then(r => r.json()).catch(e => ({error: e+""}));
 
   if (res.error) { els.answerContent.textContent = "Error: " + res.error; return; }
@@ -376,16 +469,11 @@ els.askBtn.onclick = async () => {
   lastAnswer = res.answer || "";
   els.speakBtn.disabled = !lastAnswer;
 
-  // Hide audio player if no answer
   if (!lastAnswer && els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
-
-  // hands-free: speak automatically
-  if (els.handsFree.checked && lastAnswer) {
-    await speakReply();
-  }
+  if (els.handsFree.checked && lastAnswer) { await speakReply(); }
 };
 
-/* --- TTS API --- */
+/* --- TTS (unchanged) --- */
 async function speakReply() {
   const text = els.answerContent.textContent.trim();
   if (!text) return;
@@ -398,65 +486,28 @@ async function speakReply() {
     if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "block";
     els.player.play().catch(()=>{});
     updateAudioUI();
-  } else {
-    // Hide audio player if no audio returned
-    if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
-  }
+  } else { if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none"; }
 }
 els.speakBtn.onclick = speakReply;
 
-/* --- Audio Player Controls --- */
+/* --- Audio Player Controls (unchanged) --- */
 els.playBtn.onclick = () => {
   if (!audioUrl) return;
-  if (els.player.paused) {
-    els.player.play();
-    els.playIcon.classList.remove("bi-play-fill");
-    els.playIcon.classList.add("bi-pause-fill");
-  } else {
-    els.player.pause();
-    els.playIcon.classList.remove("bi-pause-fill");
-    els.playIcon.classList.add("bi-play-fill");
-  }
+  if (els.player.paused) { els.player.play(); els.playIcon.classList.remove("bi-play-fill"); els.playIcon.classList.add("bi-pause-fill"); }
+  else { els.player.pause(); els.playIcon.classList.remove("bi-pause-fill"); els.playIcon.classList.add("bi-play-fill"); }
 };
-els.player.onplay = () => {
-  els.playIcon.classList.remove("bi-play-fill");
-  els.playIcon.classList.add("bi-pause-fill");
-};
-els.player.onpause = () => {
-  els.playIcon.classList.remove("bi-pause-fill");
-  els.playIcon.classList.add("bi-play-fill");
-};
+els.player.onplay = () => { els.playIcon.classList.remove("bi-play-fill"); els.playIcon.classList.add("bi-pause-fill"); };
+els.player.onpause = () => { els.playIcon.classList.remove("bi-pause-fill"); els.playIcon.classList.add("bi-play-fill"); };
 els.player.ontimeupdate = updateAudioUI;
-els.player.onended = () => {
-  els.playIcon.classList.remove("bi-pause-fill");
-  els.playIcon.classList.add("bi-play-fill");
-  if (els.handsFree.checked) {
-    startRecording();
-  }
-};
+els.player.onended = () => { els.playIcon.classList.remove("bi-pause-fill"); els.playIcon.classList.add("bi-play-fill"); if (els.handsFree.checked) startRecording(); };
 function updateAudioUI() {
-  const cur = els.player.currentTime || 0;
-  const dur = els.player.duration || 0;
+  const cur = els.player.currentTime || 0, dur = els.player.duration || 0;
   els.progressBar.style.width = dur ? ((cur/dur)*100).toFixed(1) + "%" : "0%";
-  els.timeLabel.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
-}
-function formatTime(t) {
-  t = Math.floor(t);
-  return `${Math.floor(t/60)}:${(t%60).toString().padStart(2,"0")}`;
+  els.timeLabel.textContent = `${Math.floor(cur/60)}:${String(Math.floor(cur%60)).padStart(2,"0")} / ${Math.floor(dur/60)}:${String(Math.floor(dur%60)).padStart(2,"0")}`;
 }
 
-/* --- STT API (recording) --- */
-function pickMime() {
-  const candidates = [
-    'audio/webm;codecs=opus',
-    'audio/webm',
-    'audio/ogg;codecs=opus',
-    'audio/ogg'
-  ];
-  for (const m of candidates) if (MediaRecorder.isTypeSupported(m)) return m;
-  return '';
-}
-
+/* --- STT (unchanged) --- */
+function pickMime() { const c=['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg']; for (const m of c) if (MediaRecorder.isTypeSupported(m)) return m; return ''; }
 async function startRecording() {
   if (recording) return;
   try {
@@ -469,251 +520,41 @@ async function startRecording() {
       const chosenType = mediaRecorder.mimeType || 'audio/webm';
       const ext = chosenType.includes('ogg') ? 'ogg' : 'webm';
       const blob = new Blob(chunks, { type: chosenType });
-
       els.status.textContent = "Transcribing…";
-      const fd = new FormData();
-      fd.append("file", blob, `speech.${ext}`);
+      const fd = new FormData(); fd.append("file", blob, `speech.${ext}`);
       const stt = await fetch(API + "/stt", { method: "POST", body: fd }).then(r => r.json()).catch(e => ({error:e+""}));
-
-      if (stt.error) {
-        console.error(stt);
-        alert("STT error: " + (stt.detail || stt.error));
-        els.status.textContent = "";
-        return;
-      }
-
-      els.queryInput.value = stt.text || "";
-      els.status.textContent = "Asking…";
-      await els.askBtn.onclick();
-
-      els.status.textContent = "";
+      if (stt.error) { console.error(stt); alert("STT error: " + (stt.detail || stt.error)); els.status.textContent = ""; return; }
+      els.queryInput.value = stt.text || ""; els.status.textContent = "Asking…"; await els.askBtn.onclick(); els.status.textContent = "";
     };
-    mediaRecorder.start();
-    recording = true;
-    els.status.textContent = "Recording… release to stop";
-    els.micIcon.classList.add("recording-pulse");
-  } catch (e) {
-    alert("Could not start recording: " + e);
-    els.status.textContent = "";
-  }
+    mediaRecorder.start(); recording = true; els.status.textContent = "Recording… release to stop"; els.micIcon.classList.add("recording-pulse");
+  } catch (e) { alert("Could not start recording: " + e); els.status.textContent = ""; }
 }
-
 function stopRecording() {
-  if (mediaRecorder && recording) {
-    mediaRecorder.stop();
-    mediaRecorder.stream.getTracks().forEach(t => t.stop());
-    recording = false;
-    els.micIcon.classList.remove("recording-pulse");
-  }
+  if (mediaRecorder && recording) { mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t => t.stop()); recording = false; els.micIcon.classList.remove("recording-pulse"); }
 }
-
-// Hold-to-talk events
 els.recordBtn.onmousedown = startRecording;
 els.recordBtn.onmouseup = stopRecording;
 els.recordBtn.onmouseleave = () => { if (recording) stopRecording(); };
 els.recordBtn.ontouchstart = (e)=>{ e.preventDefault(); startRecording(); };
 els.recordBtn.ontouchend = (e)=>{ e.preventDefault(); stopRecording(); };
-// Uncheck all RAG Source checkboxes on page load
-document.querySelectorAll('.rag-source-card .form-check-input').forEach(cb => cb.checked = false);
 
-/* --- Message Status Popup Logic --- */
-const msgData = {
-    yellow: {
-        title: "In Progress Messages",
-        messages: [
-            
-        ]
-    },
-    green: {
-        title: "Sent Messages",
-        messages: [
-        ]
-    },
-    blue: {
-        title: "Received Messages",
-        messages: [
-            "Hang tight! Help is on the way.",
-        ]
-    }
-};
+/* --- Message Status (unchanged) --- */
+const msgData={yellow:{title:"In Progress Messages",messages:[]},green:{title:"Sent Messages",messages:[]},blue:{title:"Received Messages",messages:["Hang tight! Help is on the way."]}};
+document.querySelectorAll('.msg-btn').forEach(btn=>{const cat=btn.getAttribute('data-category');const badge=btn.querySelector('.msg-badge');if(badge&&msgData[cat])badge.textContent=msgData[cat].messages.length;});
+let popupTimeout=null;
+function showMsgPopup(btn,category){hideMsgPopup();const data=msgData[category];if(!data)return;const popup=document.createElement('div');popup.className='msg-popup';popup.innerHTML=`<div class="popup-title">${data.title}</div><ul>${data.messages.map(m=>`<li>${m}</li>`).join('')}</ul>`;document.body.appendChild(popup);const rect=btn.getBoundingClientRect();popup.style.left=(rect.left+rect.width/2)+"px";popup.style.top=(rect.bottom+window.scrollY+8)+"px";setTimeout(()=>popup.classList.add('show'),10);btn._popup=popup;}
+function hideMsgPopup(){document.querySelectorAll('.msg-popup').forEach(p=>{p.classList.remove('show');setTimeout(()=>p.remove(),200);});}
+document.querySelectorAll('.msg-btn').forEach(btn=>{const cat=btn.getAttribute('data-category');btn.addEventListener('mouseenter',()=>{clearTimeout(popupTimeout);showMsgPopup(btn,cat);});btn.addEventListener('mouseleave',()=>{popupTimeout=setTimeout(hideMsgPopup,120);});btn.addEventListener('focus',()=>showMsgPopup(btn,cat));btn.addEventListener('blur',hideMsgPopup);});
+document.body.addEventListener('mouseover',e=>{if(!e.target.classList.contains('msg-popup')&&!e.target.classList.contains('msg-btn'))hideMsgPopup();});
+const messageStore=new Map();
+function normalizeApiPayload(payload){if(payload&&typeof payload==="object"&&payload.emergency_flag_cache&&typeof payload.emergency_flag_cache==="object"){const items=[];for(const[msg,status]of Object.entries(payload.emergency_flag_cache)){if(typeof msg==="string")items.push({id:msg,message:msg,status:!!status});}return items;}if(!payload)return[];if(Array.isArray(payload))return payload.filter(x=>x&&(typeof x.message==="string")).map(x=>({id:x.id||x.message,message:x.message,status:!!x.status}));if(typeof payload==="object"&&typeof payload.message==="string")return[{id:payload.id||payload.message,message:payload.message,status:!!payload.status}];if(typeof payload==="string")return[{id:payload,message:payload,status:false}];return[];}
+function upsertMessages(items){for(const item of items){const key=item.id||item.message;messageStore.set(key,{id:key,message:item.message,status:!!item.status});}const inProgress=[],sent=[];for(const{message,status}of messageStore.values()){(status?sent:inProgress).push(message);}msgData.yellow.messages=inProgress;msgData.green.messages=sent;updateBadgeCounts();refreshOpenPopupIfAny();}
+function updateBadgeCounts(){document.querySelectorAll('.msg-btn').forEach(btn=>{const cat=btn.getAttribute('data-category');const badge=btn.querySelector('.msg-badge');if(!badge)return;const list=(msgData[cat]?.messages)||[];badge.textContent=list.length;});}
+function refreshOpenPopupIfAny(){document.querySelectorAll('.msg-popup').forEach(popup=>{const titleEl=popup.querySelector('.popup-title');if(!titleEl)return;const title=titleEl.textContent.trim();let category=null;if(/In Progress/i.test(title))category='yellow';else if(/Sent Messages/i.test(title))category='green';else if(/Received Messages/i.test(title))category='blue';if(!category||!msgData[category])return;const ul=popup.querySelector('ul');if(!ul)return;ul.innerHTML=msgData[category].messages.map(m=>`<li>${m}</li>`).join('');});}
+async function pollMessageStatus(){try{const res=await fetch(API+"/",{headers:{"x-session-id":sessionId}});if(res.ok){let data=null;try{data=await res.json();}catch{data=null;}const items=normalizeApiPayload(data);if(items.length)upsertMessages(items);}}catch(err){}}
+pollMessageStatus(); setInterval(pollMessageStatus,5000);
 
-// Set badge counts dynamically
-document.querySelectorAll('.msg-btn').forEach(btn => {
-    const cat = btn.getAttribute('data-category');
-    const badge = btn.querySelector('.msg-badge');
-    if (badge && msgData[cat]) {
-        badge.textContent = msgData[cat].messages.length;
-    }
-});
-
-let popupTimeout = null;
-function showMsgPopup(btn, category) {
-    hideMsgPopup();
-    const data = msgData[category];
-    if (!data) return;
-    const popup = document.createElement('div');
-    popup.className = 'msg-popup';
-    popup.innerHTML = `
-        <div class="popup-title">${data.title}</div>
-        <ul>${data.messages.map(m => `<li>${m}</li>`).join('')}</ul>
-    `;
-    document.body.appendChild(popup);
-
-    // Position popup
-    const rect = btn.getBoundingClientRect();
-    popup.style.left = (rect.left + rect.width/2) + "px";
-    popup.style.top = (rect.bottom + window.scrollY + 8) + "px";
-    setTimeout(() => popup.classList.add('show'), 10);
-
-    btn._popup = popup;
-}
-
-function hideMsgPopup() {
-    document.querySelectorAll('.msg-popup').forEach(popup => {
-        popup.classList.remove('show');
-        setTimeout(() => popup.remove(), 200);
-    });
-}
-
-// Attach events to buttons
-document.querySelectorAll('.msg-btn').forEach(btn => {
-    const cat = btn.getAttribute('data-category');
-    btn.addEventListener('mouseenter', () => {
-        clearTimeout(popupTimeout);
-        showMsgPopup(btn, cat);
-    });
-    btn.addEventListener('mouseleave', () => {
-        popupTimeout = setTimeout(hideMsgPopup, 120);
-    });
-    btn.addEventListener('focus', () => showMsgPopup(btn, cat));
-    btn.addEventListener('blur', hideMsgPopup);
-});
-
-// Hide popup if mouse leaves popup itself
-document.body.addEventListener('mouseover', e => {
-    if (!e.target.classList.contains('msg-popup') &&
-        !e.target.classList.contains('msg-btn')) {
-        hideMsgPopup();
-    }
-});
-
-
-// --- Message polling & UI sync ---------------------------------------------
-
-// We’ll keep a canonical store so we can re-derive boxes each poll.
-const messageStore = new Map(); // key -> { id, message, status }
-
-// Safely turn the API response into a normalized array
-function normalizeApiPayload(payload) {
-  // NEW: handle { emergency_flag_cache: { "<message>": <bool>, ... } }
-  if (
-    payload &&
-    typeof payload === "object" &&
-    payload.emergency_flag_cache &&
-    typeof payload.emergency_flag_cache === "object"
-  ) {
-    const items = [];
-    for (const [msg, status] of Object.entries(payload.emergency_flag_cache)) {
-      if (typeof msg === "string") {
-        items.push({ id: msg, message: msg, status: !!status });
-      }
-    }
-    return items;
-  }
-
-  // Existing shapes:
-  if (!payload) return [];
-  if (Array.isArray(payload)) {
-    return payload
-      .filter(x => x && (typeof x.message === "string"))
-      .map(x => ({ id: x.id || x.message, message: x.message, status: !!x.status }));
-  }
-  if (typeof payload === "object" && typeof payload.message === "string") {
-    return [{ id: payload.id || payload.message, message: payload.message, status: !!payload.status }];
-  }
-  if (typeof payload === "string") {
-    return [{ id: payload, message: payload, status: false }];
-  }
-  return [];
-}
-
-// Update in-memory store, then re-derive msgData + badges + any open popup
-function upsertMessages(items) {
-  for (const item of items) {
-    const key = item.id || item.message; // prefer id if provided
-    const existing = messageStore.get(key);
-    // If we had it in progress and now it's true, it'll roll to Sent when we re-derive
-    messageStore.set(key, { id: key, message: item.message, status: !!item.status });
-  }
-  // Rebuild the UI buckets from scratch (source of truth is messageStore)
-  const inProgress = [];
-  const sent = [];
-  for (const { message, status } of messageStore.values()) {
-    if (status) sent.push(message);
-    else inProgress.push(message);
-  }
-
-  msgData.yellow.messages = inProgress; // InProgress
-  msgData.green.messages = sent;        // Sent
-
-  updateBadgeCounts();
-  refreshOpenPopupIfAny();
-}
-
-// Badge count helper (uses your existing .msg-btns and .msg-badge spans)
-function updateBadgeCounts() {
-  document.querySelectorAll('.msg-btn').forEach(btn => {
-    const cat = btn.getAttribute('data-category');
-    const badge = btn.querySelector('.msg-badge');
-    if (!badge) return;
-    const list = (msgData[cat]?.messages) || [];
-    badge.textContent = list.length;
-  });
-}
-
-// If a popup is visible, refresh its contents to reflect latest lists
-function refreshOpenPopupIfAny() {
-  document.querySelectorAll('.msg-popup').forEach(popup => {
-    // Find which category this popup belongs to by inspecting the title text
-    const titleEl = popup.querySelector('.popup-title');
-    if (!titleEl) return;
-    const title = titleEl.textContent.trim();
-    let category = null;
-    if (/In Progress/i.test(title)) category = 'yellow';
-    else if (/Sent Messages/i.test(title)) category = 'green';
-    else if (/Received Messages/i.test(title)) category = 'blue';
-    if (!category || !msgData[category]) return;
-    const ul = popup.querySelector('ul');
-    if (!ul) return;
-    ul.innerHTML = msgData[category].messages.map(m => `<li>${m}</li>`).join('');
-  });
-}
-
-// Poll the API root every 5s
-async function pollMessageStatus() {
-  try {
-    const res = await fetch(API + "/", { headers: { "x-session-id": sessionId } });
-    // Expect JSON; if server sometimes returns 204/empty, guard it
-    if (res.ok) {
-      let data = null;
-      try { data = await res.json(); } catch { data = null; }
-      const items = normalizeApiPayload(data);
-      if (items.length) upsertMessages(items);
-    }
-  } catch (err) {
-    // Silently ignore network hiccups; no UI spam
-    // console.debug("Poll error:", err);
-  }
-}
-
-// Kick off immediately, then every 5s
-pollMessageStatus();
-setInterval(pollMessageStatus, 5000);
-
-window.onload = function() {
-  // Select the radio button with the specific ID and set its checked property to true
-  document.getElementById("general").checked = true;
-};
+window.onload = function() { document.getElementById("general").checked = true; };
 </script>
 </body>
 </html>
