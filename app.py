@@ -233,7 +233,7 @@ class AskBody(BaseModel):
         "- Then provide concise, step-by-step numbered instructions (1., 2., 3.).\n"
         "- Do NOT use bold/italics/emphasis markers like **, *, or _ in the body.\n"
         "- Avoid decorative symbols; keep content clean and readable.\n"
-        "- End with: Not a medical professional."
+        "- If you are unsure or the information is not available, say \"I don't know\"."
     )
 
 @app.get("/")
