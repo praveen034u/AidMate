@@ -272,33 +272,35 @@
                 </div>
             </div>
 
-            <div class="card rag-source-card">
-                <div class="card-header border-0 pb-2">
-                    <h5 class="card-title mb-0 text-white"><i class="bi bi-database me-2"></i> RAG Source</h5>
-                </div>
-                <div class="card-body pt-2">
-                    <div class="form-check mb-2">
-                        <input class="form-check-input emergency-checkbox" type="checkbox" id="earthquake" checked>
-                        <label class="form-check-label text-white fw-medium" for="earthquake">Earthquake</label>
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input emergency-checkbox" type="checkbox" id="hurricane" checked>
-                        <label class="form-check-label text-white fw-medium" for="hurricane">Hurricane</label>
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input emergency-checkbox" type="checkbox" id="wildfire" checked>
-                        <label class="form-check-label text-white fw-medium" for="wildfire">Wildfire</label>
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input emergency-checkbox" type="checkbox" id="flood" checked>
-                        <label class="form-check-label text-white fw-medium" for="flood">Flood</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input emergency-checkbox" type="checkbox" id="severeWeather" checked>
-                        <label class="form-check-label text-white fw-medium" for="severeWeather">Severe Weather</label>
-                    </div>
-                </div>
-            </div>
+            <!-- ...existing code... -->
+<div class="card rag-source-card">
+    <div class="card-header border-0 pb-2">
+        <h5 class="card-title mb-0 text-white"><i class="bi bi-database me-2"></i> RAG Source</h5>
+    </div>
+    <div class="card-body pt-2">
+        <div class="form-check mb-2">
+            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="earthquake" value="earthquake">
+            <label class="form-check-label text-white fw-medium" for="earthquake">Earthquake</label>
+        </div>
+        <div class="form-check mb-2">
+            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="fire" value="fire">
+            <label class="form-check-label text-white fw-medium" for="fire">Wildfire</label>
+        </div>
+        <div class="form-check mb-2">
+            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="severe_weather" value="severe_weather">
+            <label class="form-check-label text-white fw-medium" for="severe_weather">Severe Weather</label>
+        </div>
+        <div class="form-check mb-2">
+            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="flood" value="flood">
+            <label class="form-check-label text-white fw-medium" for="flood">Flood</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="hurricane" value="hurricane">
+            <label class="form-check-label text-white fw-medium" for="hurricane">Hurricane</label>
+        </div>
+    </div>
+</div>
+<!-- ...existing code... -->
         </aside>
     </div>
 </main>
@@ -309,6 +311,12 @@
 <script>
 const API = "http://localhost:7860"; // Adjust if your backend runs on a different port
 const sessionId = crypto.randomUUID();
+
+// Helper to get selected rag source
+function getSelectedRagSource() {
+    const selected = document.querySelector('input[name="ragSource"]:checked');
+    return selected ? selected.value : "file";
+}
 
 const els = {
   queryInput: document.getElementById("queryInput"),
@@ -348,10 +356,14 @@ els.askBtn.onclick = async () => {
   // Hide audio player when asking a new question
   if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
 
+    // Get selected rag source
+  const ragSource = getSelectedRagSource();
+  console.log("Selected RAG Source:", ragSource);
+
   const res = await fetch(API + "/ask", {
     method: "POST",
     headers: {"Content-Type":"application/json", "x-session-id": sessionId},
-    body: JSON.stringify({ prompt: text })
+    body: JSON.stringify({ prompt: text, crisis: ragSource, model: "gpt-oss" })
   }).then(r => r.json()).catch(e => ({error: e+""}));
 
   if (res.error) { els.answerContent.textContent = "Error: " + res.error; return; }
@@ -504,25 +516,18 @@ const msgData = {
     yellow: {
         title: "In Progress Messages",
         messages: [
-            "Message queued for sending.",
-            "Awaiting network confirmation.",
-            "Retrying delivery."
+            
         ]
     },
     green: {
         title: "Sent Messages",
         messages: [
-            "Message sent successfully.",
-            "Delivery confirmed.",
-            "Recipient notified."
         ]
     },
     blue: {
         title: "Received Messages",
         messages: [
-            "Message received from contact.",
-            "Read by recipient.",
-            "Reply pending."
+            "Hang tight! Help is on the way.",
         ]
     }
 };
@@ -586,6 +591,121 @@ document.body.addEventListener('mouseover', e => {
         hideMsgPopup();
     }
 });
+
+
+// --- Message polling & UI sync ---------------------------------------------
+
+// We’ll keep a canonical store so we can re-derive boxes each poll.
+const messageStore = new Map(); // key -> { id, message, status }
+
+// Safely turn the API response into a normalized array
+function normalizeApiPayload(payload) {
+  // NEW: handle { emergency_flag_cache: { "<message>": <bool>, ... } }
+  if (
+    payload &&
+    typeof payload === "object" &&
+    payload.emergency_flag_cache &&
+    typeof payload.emergency_flag_cache === "object"
+  ) {
+    const items = [];
+    for (const [msg, status] of Object.entries(payload.emergency_flag_cache)) {
+      if (typeof msg === "string") {
+        items.push({ id: msg, message: msg, status: !!status });
+      }
+    }
+    return items;
+  }
+
+  // Existing shapes:
+  if (!payload) return [];
+  if (Array.isArray(payload)) {
+    return payload
+      .filter(x => x && (typeof x.message === "string"))
+      .map(x => ({ id: x.id || x.message, message: x.message, status: !!x.status }));
+  }
+  if (typeof payload === "object" && typeof payload.message === "string") {
+    return [{ id: payload.id || payload.message, message: payload.message, status: !!payload.status }];
+  }
+  if (typeof payload === "string") {
+    return [{ id: payload, message: payload, status: false }];
+  }
+  return [];
+}
+
+// Update in-memory store, then re-derive msgData + badges + any open popup
+function upsertMessages(items) {
+  for (const item of items) {
+    const key = item.id || item.message; // prefer id if provided
+    const existing = messageStore.get(key);
+    // If we had it in progress and now it's true, it'll roll to Sent when we re-derive
+    messageStore.set(key, { id: key, message: item.message, status: !!item.status });
+  }
+  // Rebuild the UI buckets from scratch (source of truth is messageStore)
+  const inProgress = [];
+  const sent = [];
+  for (const { message, status } of messageStore.values()) {
+    if (status) sent.push(message);
+    else inProgress.push(message);
+  }
+
+  msgData.yellow.messages = inProgress; // InProgress
+  msgData.green.messages = sent;        // Sent
+
+  updateBadgeCounts();
+  refreshOpenPopupIfAny();
+}
+
+// Badge count helper (uses your existing .msg-btns and .msg-badge spans)
+function updateBadgeCounts() {
+  document.querySelectorAll('.msg-btn').forEach(btn => {
+    const cat = btn.getAttribute('data-category');
+    const badge = btn.querySelector('.msg-badge');
+    if (!badge) return;
+    const list = (msgData[cat]?.messages) || [];
+    badge.textContent = list.length;
+  });
+}
+
+// If a popup is visible, refresh its contents to reflect latest lists
+function refreshOpenPopupIfAny() {
+  document.querySelectorAll('.msg-popup').forEach(popup => {
+    // Find which category this popup belongs to by inspecting the title text
+    const titleEl = popup.querySelector('.popup-title');
+    if (!titleEl) return;
+    const title = titleEl.textContent.trim();
+    let category = null;
+    if (/In Progress/i.test(title)) category = 'yellow';
+    else if (/Sent Messages/i.test(title)) category = 'green';
+    else if (/Received Messages/i.test(title)) category = 'blue';
+    if (!category || !msgData[category]) return;
+    const ul = popup.querySelector('ul');
+    if (!ul) return;
+    ul.innerHTML = msgData[category].messages.map(m => `<li>${m}</li>`).join('');
+  });
+}
+
+// Poll the API root every 5s
+async function pollMessageStatus() {
+  try {
+    const res = await fetch(API + "/", { headers: { "x-session-id": sessionId } });
+    // Expect JSON; if server sometimes returns 204/empty, guard it
+    if (res.ok) {
+      let data = null;
+      try { data = await res.json(); } catch { data = null; }
+      const items = normalizeApiPayload(data);
+      if (items.length) upsertMessages(items);
+    }
+  } catch (err) {
+    // Silently ignore network hiccups; no UI spam
+    // console.debug("Poll error:", err);
+  }
+}
+
+// Kick off immediately, then every 5s
+pollMessageStatus();
+setInterval(pollMessageStatus, 5000);
+
+
 </script>
 </body>
 </html>

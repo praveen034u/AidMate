@@ -258,7 +258,7 @@ def ask(body: AskBody, x_session_id: Optional[str] = Header(default="")):
     print("Crisis:",  body.crisis)
     
     # Start emergency flag detection in background (non-blocking)
-   # detectEmergencyFlag(body.prompt)
+    detectEmergencyFlag(body.prompt)
 
     # Render history if session ID provided
     history = render_history(x_session_id)
