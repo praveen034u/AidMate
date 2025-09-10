@@ -1,88 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>AidMate (Voice)- AI Assistant</title>
-    <meta name="description" content="Voice-enabled AI assistant for emergency and healthcare support"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crisis AidMate (Voice)- AI Assistant</title>
+  <meta name="description" content="Voice-enabled AI assistant for emergency and healthcare support"/>
 
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet"/>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet"/>
 
-    <style>
-        :root {
-            --medical-teal: #1d7a8c;
-            --medical-teal-light: #2596be;
-            --emergency-orange: #ff6b35;
-            --emergency-orange-light: #ff8c65;
-            --warning-amber: #ffa726;
-            --bg-light: #fefefe;
-        }
-        body { background-color: var(--bg-light); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .medical-header { background: linear-gradient(135deg, var(--medical-teal), var(--medical-teal-light)); color: white; box-shadow: 0 2px 10px rgba(29, 122, 140, 0.1); }
-        .btn-medical { background-color: var(--medical-teal); border-color: var(--medical-teal); color: white; }
-        .btn-medical:hover { background-color: var(--medical-teal-light); border-color: var(--medical-teal-light); color: white; }
-        .btn-warning-custom { background-color: var(--warning-amber); border-color: var(--warning-amber); color: white; }
-        .btn-warning-custom:hover { background-color: #ff9800; border-color: #ff9800; color: white; }
-        .help-support-card, .rag-source-card { color: white; border: none; }
+  <style>
+    :root{
+      --medical-teal:#1d7a8c;           /* brand */
+      --medical-teal-600:#0f5e69;
+      --medical-teal-light:#2596be;
 
-        /* existing card theme tweaks */
-        .help-support-card { background:#fff; color:#1d7a8c; border:2px solid #1d7a8c; }
-        .help-support-card .card-header { background:#1d7a8c; color:#fff; border-bottom:none; }
-        .rag-source-card { background:#fff; color:#ff6b35; border:2px solid #ff6b35; }
-        .rag-source-card .card-header { background:#ff6b35; color:#fff; border-bottom:none; }
+      --orange:#ff6b35;                 /* emergency accent */
+      --orange-600:#a94820;
+      --amber:#ffa726;
 
-        .rag-source-card .form-check-input { accent-color:#535555; border:2px solid #535555 !important; box-shadow:none !important; }
-        .rag-source-card .form-check-input:focus { border-color:#535555!important; box-shadow:0 0 0 0.15rem rgba(221,101,46,0.25) !important; }
-        .rag-source-card .form-check-label { color:#535555 !important; font-weight:500; }
+      --soft-teal:#f3fbfd;              /* soft header bg tints */
+      --soft-orange:#fff6f1;
+      --soft-amber:#fff7f0;
 
-        .answer-card { background: white; border: 1px solid #e9ecef; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        .audio-player { background: white; border: 1px solid #dee2e6; border-radius: .5rem; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
-        .recording-pulse { animation: pulse 1s infinite; }
-        @keyframes pulse { 0%{opacity:1} 50%{opacity:.5} 100%{opacity:1} }
-        .progress-custom { height: 6px; background-color: #e9ecef; }
-        .progress-bar-custom { background-color: var(--medical-teal); }
-        .emergency-checkbox { accent-color: white; }
-        .main-textarea { min-height: 120px; resize: vertical; border: 1px solid #ced4da; border-radius: .5rem; }
-        .main-textarea:focus { border-color: var(--medical-teal); box-shadow: 0 0 0 .2rem rgba(29,122,140,.25); }
-        .answer-content { max-height: 400px; overflow-y: auto; }
-        .answer-content::-webkit-scrollbar { width: 6px; }
-        .answer-content::-webkit-scrollbar-track { background:#f1f1f1; border-radius:3px; }
-        .answer-content::-webkit-scrollbar-thumb { background: var(--medical-teal); border-radius:3px; }
-        @media (max-width: 768px) { .btn-group-mobile { flex-direction: column; gap: .5rem; } .btn-group-mobile .btn { width: 100%; } }
+      --bg-light:#fefefe;
+      --ink:#1f2937;                    /* readable body text */
+      --muted:#6b7280;
+      --border:#e5e7eb;
+    }
 
-        /* Message Status Buttons & Popup */
-        .msg-btn { position:relative; margin:0 2px; min-width:80px; max-width:100px; padding:0 .5rem; font-size:.85rem; white-space:nowrap; }
-        .msg-badge { font-size:.85em; top:50%; right:-12px; min-width:24px; height:24px; line-height:22px; background:#000 !important; color:#fff !important; display:flex; align-items:center; justify-content:center; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,0.12); z-index:2; position:absolute; transform:translateY(-50%); pointer-events:none; }
-        .msg-popup { position:absolute; left:50%; top:120%; transform:translateX(-50%); min-width:180px; background:#fff; color:#222; border-radius:8px; box-shadow:0 4px 18px rgba(0,0,0,0.13); padding:1rem; z-index:1000; opacity:0; pointer-events:none; transition:opacity .2s; font-size:.97rem; border:1px solid #e0e0e0; }
-        .msg-popup.show { opacity:1; pointer-events:auto; }
-        .msg-popup .popup-title { font-weight:600; margin-bottom:.5rem; }
-        .msg-popup ul { padding-left:1.1em; margin:0; font-size:.96em; }
-        .msg-popup li { margin-bottom:.3em; }
-        @media (max-width: 600px) { .msg-popup { min-width:120px; font-size:.92rem; } }
+    body{background-color:var(--bg-light); font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color:var(--ink);}
+    .medical-header{background:linear-gradient(135deg,var(--medical-teal),var(--medical-teal-light)); color:#fff; box-shadow:0 2px 10px rgba(29,122,140,.1);}
 
-        /* Location UI */
-        .loc-pill { display:inline-flex; align-items:center; gap:.4rem; background: rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,.35); padding:.25rem .6rem; border-radius:999px; font-size:.85rem; }
-        .loc-warning { background:#fff3cd; border:1px solid #ffeeba; color:#856404; }
-        .loc-warning a { font-weight:600; }
-    </style>
+    .btn-medical{background-color:var(--medical-teal); border-color:var(--medical-teal); color:#fff;}
+    .btn-medical:hover{background-color:var(--medical-teal-light); border-color:var(--medical-teal-light); color:#fff;}
+    .btn-warning-custom{background-color:var(--amber); border-color:var(--amber); color:#fff;}
+    .btn-warning-custom:hover{background-color:#ff9800; border-color:#ff9800; color:#fff;}
+
+    /* Cards */
+    .answer-card{background:#fff; border:1px solid var(--border); box-shadow:0 2px 10px rgba(0,0,0,.08);}
+    .audio-player{background:#fff; border:1px solid #dee2e6; border-radius:.5rem; box-shadow:0 1px 5px rgba(0,0,0,.05);}
+
+    /* Help Support */
+    .help-support-card{background:#fff; border:2px solid var(--medical-teal); color:var(--ink);}
+    .help-support-card .card-header{background:var(--soft-teal); color:var(--medical-teal-600); border-bottom:1px solid var(--border);}
+
+    /* Crisis Source */
+    .rag-source-card{background:#fff; border:2px solid var(--orange); color:var(--ink);}
+    .rag-source-card .card-header{background:var(--soft-orange); color:var(--orange-600); border-bottom:1px solid var(--border);}
+
+    /* Alerts */
+    .alerts-card{background:#fff; border:2px solid var(--orange); color:var(--ink);}
+    .alerts-card .card-header{background:var(--soft-amber); color:var(--orange-600); border-bottom:1px solid var(--border);}
+
+    /* Inputs inside crisis source */
+    .rag-source-card .form-check-input{accent-color:#535555; border:2px solid #535555!important; box-shadow:none!important;}
+    .rag-source-card .form-check-input:focus{border-color:#535555!important; box-shadow:0 0 0 .15rem rgba(221,101,46,.25)!important;}
+    .rag-source-card .form-check-label{color:#535555!important; font-weight:500;}
+
+    .recording-pulse{animation:pulse 1s infinite;}
+    @keyframes pulse{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
+    .progress-custom{height:6px; background-color:#e9ecef;}
+    .progress-bar-custom{background-color:var(--medical-teal);}
+    .main-textarea{min-height:120px; resize:vertical; border:1px solid #ced4da; border-radius:.5rem;}
+    .main-textarea:focus{border-color:var(--medical-teal); box-shadow:0 0 0 .2rem rgba(29,122,140,.25);}
+    .answer-content{max-height:400px; overflow-y:auto;}
+    .answer-content::-webkit-scrollbar{width:6px;}
+    .answer-content::-webkit-scrollbar-track{background:#f1f1f1; border-radius:3px;}
+    .answer-content::-webkit-scrollbar-thumb{background:var(--medical-teal); border-radius:3px;}
+    @media (max-width:768px){.btn-group-mobile{flex-direction:column; gap:.5rem;} .btn-group-mobile .btn{width:100%;}}
+
+    /* Message Status Buttons & Popup */
+    .msg-btn{position:relative; margin:0 2px; min-width:80px; max-width:100px; padding:0 .5rem; font-size:.85rem; white-space:nowrap;}
+    .msg-badge{font-size:.85em; top:50%; right:-12px; min-width:24px; height:24px; line-height:22px; background:#000!important; color:#fff!important; display:flex; align-items:center; justify-content:center; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,.12); z-index:2; position:absolute; transform:translateY(-50%); pointer-events:none;}
+    .msg-popup{position:absolute; left:50%; top:120%; transform:translateX(-50%); min-width:180px; background:#fff; color:#222; border-radius:8px; box-shadow:0 4px 18px rgba(0,0,0,.13); padding:1rem; z-index:1000; opacity:0; pointer-events:none; transition:opacity .2s; font-size:.97rem; border:1px solid #e0e0e0;}
+    .msg-popup.show{opacity:1; pointer-events:auto;}
+    .msg-popup .popup-title{font-weight:600; margin-bottom:.5rem;}
+    .msg-popup ul{padding-left:1.1em; margin:0; font-size:.96em;}
+    .msg-popup li{margin-bottom:.3em;}
+    @media (max-width:600px){.msg-popup{min-width:120px; font-size:.92rem;}}
+
+    /* Location UI */
+    .loc-pill{display:inline-flex; align-items:center; gap:.4rem; background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.35); padding:.25rem .6rem; border-radius:999px; font-size:.85rem;}
+    .loc-warning{background:#fff3cd; border:1px solid #ffeeba; color:#856404;}
+    .loc-warning a{font-weight:600;}
+
+    /* Collapsible chevron rotation */
+    .chev{transition:transform .2s ease;}
+    .chev.rotate{transform:rotate(180deg);}
+
+    /* Flicker fixes for collapse */
+    #ragCollapse, #ragCollapse.collapsing{will-change:height; -webkit-backface-visibility:hidden; backface-visibility:hidden; transform:translateZ(0);}
+    aside.no-anchor{overflow-anchor:none;}
+
+    /* ===== Chat History (left offcanvas) ===== */
+    .history-fab{
+      position:fixed; left:14px; bottom:18px; z-index:1050;
+      border-radius:999px;
+    }
+    .offcanvas-title small{ color:var(--muted); font-weight:400; }
+    .history-item .title{ font-weight:600; }
+    .history-item .meta{ color:var(--muted); font-size:.8rem; }
+    .truncate-2{
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
+
+  /* Narrower left history panel so it doesn't cover the question area */
+  #chatHistory.offcanvas-start {
+   width: 300px;          /* desktop/tablet */
+   max-width: 100vw;       /* safety for smaller screens */
+  }
+
+  /* Optional: even slimmer on very wide screens */
+  @media (min-width: 1500px) {
+   #chatHistory.offcanvas-start { width: 295px; }
+  }
+
+   /* Optional: a bit wider on small phones for usability */
+   @media (max-width: 600px) {
+    #chatHistory.offcanvas-start { width: 95vw; }
+   }
+  </style>
 </head>
 <body>
 <header class="medical-header py-3 mb-2">
-    <div class="container d-flex align-items-center justify-content-between">
-        <div>
-            <h1 class="h2 mb-1 fw-bold"><i class="bi bi-mic-fill me-2"></i>AidMate (Voice)</h1>
-            <p class="mb-0 opacity-75"><small>AI that never drops the call — online or offline</small></p>
-        </div>
-        <div>
-            <span id="locPill" class="loc-pill" title="Location status">
-                <i class="bi bi-geo-alt"></i>
-                <span id="locText">Location: checking…</span>
-            </span>
-        </div>
+  <div class="container d-flex align-items-center justify-content-between">
+    <div>
+      <h1 class="h2 mb-1 fw-bold"><i class="bi bi-mic-fill me-2"></i>Crisis AidMate (Powered by AI)</h1>
+      <p class="mb-0 opacity-75"><small>AI that never drops the call — online or offline</small></p>
     </div>
+    <div>
+      <span id="locPill" class="loc-pill" title="Location status">
+        <i class="bi bi-geo-alt"></i>
+        <span id="locText">Location: checking…</span>
+      </span>
+    </div>
+  </div>
 </header>
 
 <!-- Location warning banner -->
@@ -105,456 +160,640 @@
 </div>
 
 <main class="container mb-5">
-    <div class="row g-4">
-        <!-- Left Section -->
-        <section class="col-lg-8">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <label for="queryInput" class="form-label fw-semibold">Ask your question:</label>
-                    <textarea id="queryInput" class="form-control main-textarea" placeholder="Ask your question here..." aria-label="Medical query input"></textarea>
+  <div class="row g-4">
+    <!-- Left -->
+    <section class="col-lg-8">
+      <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+          <label for="queryInput" class="form-label fw-semibold">Ask your question:</label>
+          <textarea id="queryInput" class="form-control main-textarea" placeholder="Ask your question here..." aria-label="Medical query input"></textarea>
 
-                    <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
-                        <div class="btn-group-mobile d-flex flex-wrap gap-2">
-                            <button type="button" class="btn btn-medical" id="askBtn">
-                                <i class="bi bi-send me-1"></i> Ask
-                            </button>
-                            <button type="button" class="btn btn-secondary" id="speakBtn">
-                                <i class="bi bi-volume-up me-1"></i> Speak Reply
-                            </button>
-                            <button type="button" class="btn btn-warning-custom" id="recordBtn"
-                                    onmousedown="startRecording()" onmouseup="stopRecording()" onmouseleave="stopRecording()"
-                                    ontouchstart="startRecording()" ontouchend="stopRecording()">
-                                <i class="bi bi-mic" id="micIcon"></i> Hold to Record
-                            </button>
-                        </div>
-
-                        <div class="ms-auto d-flex align-items-center gap-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="handsFree">
-                                <label class="form-check-label fw-medium" for="handsFree">Hands-free</label>
-                            </div>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" id="shareLocSwitchInline">
-                                <label class="form-check-label fw-medium" for="shareLocSwitchInline">Share location</label>
-                            </div>
-                        </div>
-
-                        <span id="status" class="text-muted small ms-2"></span>
-                    </div>
-                </div>
+          <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+            <div class="btn-group-mobile d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-medical" id="askBtn">
+                <i class="bi bi-send me-1"></i> Ask
+              </button>
+              <button type="button" class="btn btn-secondary" id="speakBtn">
+                <i class="bi bi-volume-up me-1"></i> Speak Reply
+              </button>
+              <button type="button" class="btn btn-warning-custom" id="recordBtn"
+                onmousedown="startRecording()" onmouseup="stopRecording()" onmouseleave="stopRecording()"
+                ontouchstart="startRecording()" ontouchend="stopRecording()">
+                <i class="bi bi-mic" id="micIcon"></i> Hold to Record
+              </button>
             </div>
 
-            <div class="card answer-card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0 fw-semibold"><i class="bi bi-chat-dots me-2"></i> Answer</h5>
-                </div>
-                <div class="card-body">
-                    <div id="answerContent" class="answer-content">—</div>
-                </div>
+            <div class="ms-auto d-flex align-items-center gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="handsFree">
+                <label class="form-check-label fw-medium" for="handsFree">Hands-free</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="shareLocSwitchInline">
+                <label class="form-check-label fw-medium" for="shareLocSwitchInline">Share location</label>
+              </div>
             </div>
 
-            <div class="audio-player p-3">
-                <div class="d-flex align-items-center gap-3">
-                    <button type="button" class="btn btn-outline-primary btn-sm rounded-circle" id="playBtn" style="width:40px;height:40px;">
-                        <i class="bi bi-play-fill" id="playIcon"></i>
-                    </button>
-                    <div class="flex-grow-1">
-                        <div class="progress progress-custom">
-                            <div class="progress-bar progress-bar-custom" id="progressBar" role="progressbar"
-                                 style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center gap-1 text-muted">
-                        <i class="bi bi-volume-down"></i>
-                        <small id="timeLabel">0:00 / 0:00</small>
-                    </div>
-                </div>
-                <audio id="player" preload="none" style="display:none;"></audio>
+            <span id="status" class="text-muted small ms-2"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card answer-card mb-4">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0 fw-semibold"><i class="bi bi-chat-dots me-2"></i> Answer</h5>
+        </div>
+        <div class="card-body">
+          <div id="answerContent" class="answer-content">—</div>
+        </div>
+      </div>
+
+      <div class="audio-player p-3">
+        <div class="d-flex align-items-center gap-3">
+          <button type="button" class="btn btn-outline-primary btn-sm rounded-circle" id="playBtn" style="width:40px;height:40px;">
+            <i class="bi bi-play-fill" id="playIcon"></i>
+          </button>
+          <div class="flex-grow-1">
+            <div class="progress progress-custom">
+              <div class="progress-bar progress-bar-custom" id="progressBar" role="progressbar"
+                   style="width:0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
-        </section>
+          </div>
+          <div class="d-flex align-items-center gap-1 text-muted">
+            <i class="bi bi-volume-down"></i>
+            <small id="timeLabel">0:00 / 0:00</small>
+          </div>
+        </div>
+        <audio id="player" preload="none" style="display:none;"></audio>
+      </div>
+    </section>
 
-        <!-- Right Section -->
-        <aside class="col-lg-4">
-            <div class="card help-support-card mb-4">
-                <div class="card-header border-0 pb-2">
-                    <h5 class="card-title mb-0 text-white"><i class="bi bi-headset me-2"></i> Help Support</h5>
-                </div>
-                <div class="card-body pt-2">
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="bi bi-chat-square-text me-2"></i>
-                        <div>
-                            <div class="fw-semibold d-flex align-items-center gap-2">
-                                Message Status:
-                            </div>
-                            <small class="opacity-75">Mode: SMS</small>
+    <!-- Right -->
+    <aside class="col-lg-4 no-anchor">
+      <!-- Help Support -->
+      <div class="card help-support-card mb-4">
+        <div class="card-header border-0 pb-2">
+          <h5 class="card-title mb-0"><i class="bi bi-headset me-2"></i> Help Support</h5>
+        </div>
+        <div class="card-body pt-2">
+          <div class="d-flex align-items-center mb-3">
+            <i class="bi bi-chat-square-text me-2"></i>
+            <div>
+              <div class="fw-semibold d-flex align-items-center gap-2">Message Status:</div>
+              <small class="text-muted">Mode: SMS</small>
 
-                            <div class="mt-2 d-flex gap-2 position-relative" style="overflow: visible;">
-                                <button type="button" class="btn btn-sm btn-warning position-relative msg-btn" data-category="yellow" tabindex="0">
-                                    InProgress <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-success position-relative msg-btn" data-category="green" tabindex="0">
-                                    Sent <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-primary position-relative msg-btn" data-category="blue" tabindex="0">
-                                    Received <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- EDITABLE CONTACT: added block -->
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-telephone me-2"></i>
-                        <div>
-                            <div class="fw-semibold d-flex align-items-center gap-2">
-                                Emergency Contact
-                                <button class="btn btn-sm btn-outline-secondary p-1" id="editContactBtn" title="Edit">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                            </div>
-                            <div id="contactDisplay">
-                                <a href="tel:+18048689796" class="text-dark text-decoration-none">
-                                    <small id="contactNumber">+1 8048689796</small>
-                                </a>
-                            </div>
-                            <div id="contactEdit" class="d-none">
-                                <input type="text" class="form-control form-control-sm mb-1" id="contactInput" value="+1 8048689796">
-                                <button class="btn btn-sm btn-success" id="saveContactBtn">
-                                    <i class="bi bi-check"></i> Save
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- /editable contact -->
-                </div>
+              <div class="mt-2 d-flex gap-2 position-relative" style="overflow:visible;">
+                <button type="button" class="btn btn-sm btn-warning position-relative msg-btn" data-category="yellow" tabindex="0" style="margin-right:5%;">
+                  InProgress <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
+                </button>
+                <button type="button" class="btn btn-sm btn-success position-relative msg-btn" data-category="green" tabindex="0" style="margin-right:5%;">
+                  Sent <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
+                </button>
+                <button type="button" class="btn btn-sm btn-primary position-relative msg-btn" data-category="blue" tabindex="0">
+                  Received <span class="badge position-absolute top-0 start-100 translate-middle rounded-pill msg-badge"></span>
+                </button>
+              </div>
             </div>
+          </div>
 
-            <div class="card rag-source-card">
-                <div class="card-header border-0 pb-2">
-                    <h5 class="card-title mb-0 text-white"><i class="bi bi-database me-2"></i> Emergency Alerts</h5>
-                </div>
-                <div class="card-body pt-2">
-                    <div class="form-check">
-                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="general" value="files" checked>
-                        <label class="form-check-label text-white fw-medium" for="general">General</label>
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="earthquake" value="earthquake">
-                        <label class="form-check-label text-white fw-medium" for="earthquake">Earthquake</label>
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="fire" value="fire">
-                        <label class="form-check-label text-white fw-medium" for="fire">Wildfire</label>
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="severe_weather" value="severe_weather">
-                        <label class="form-check-label text-white fw-medium" for="severe_weather">Severe Weather</label>
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="flood" value="flood">
-                        <label class="form-check-label text-white fw-medium" for="flood">Flood</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="hurricane" value="hurricane">
-                        <label class="form-check-label text-white fw-medium" for="hurricane">Hurricane</label>
-                    </div>     
-                </div>
+          <!-- Editable contact -->
+          <div class="d-flex align-items-center">
+            <i class="bi bi-telephone me-2"></i>
+            <div>
+              <div class="fw-semibold d-flex align-items-center gap-2">
+                Emergency Contact
+                <button class="btn btn-sm btn-outline-secondary p-1" id="editContactBtn" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </button>
+              </div>
+              <div id="contactDisplay">
+                <a href="tel:+18048689796" class="text-decoration-none">
+                  <small id="contactNumber">+1 8048689796</small>
+                </a>
+              </div>
+              <div id="contactEdit" class="d-none">
+                <input type="text" class="form-control form-control-sm mb-1" id="contactInput" value="+1 8048689796">
+                <button class="btn btn-sm btn-success" id="saveContactBtn">
+                  <i class="bi bi-check"></i> Save
+                </button>
+              </div>
             </div>
-        </aside>
-    </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="card alerts-card mb-4">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>
+              <h5 class="card-title mb-0">Real-Time Emergency Alerts</h5>
+              <small class="text-muted">Fetched live from trusted sources</small>
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="small text-muted">Updated: <span id="alertsUpdatedAt">—</span></div>
+            <button id="alertsRefreshBtn" class="btn btn-sm btn-outline-dark mt-1">
+              <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+          </div>
+        </div>
+        <div class="card-body pt-3">
+          <div id="alertsList" class="list-group small"></div>
+          <div class="mt-2 text-muted" style="font-size:.85rem;">Sources: NWS, NHC, USGS</div>
+        </div>
+      </div>
+
+      <!-- Crisis Data Source (collapsible) -->
+      <div class="card rag-source-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="card-title mb-0">
+              <i class="bi bi-database me-2"></i> Crisis Data Source
+            </h5>
+            <h6 class="card-subtitle mb-0 text-muted" style="padding-left:10%;"><small>- Select relevant data for better answers</small></h6>
+          </div>
+          <button class="btn btn-sm btn-outline-dark" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#ragCollapse"
+                  aria-expanded="true" aria-controls="ragCollapse" id="ragToggleBtn">
+            <i class="bi bi-chevron-down chev" id="ragChevron"></i>
+          </button>
+        </div>
+
+        <div id="ragCollapse" class="collapse show">
+          <div class="card-body pt-2">
+            <div class="form-check">
+              <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="general" value="files" checked>
+              <label class="form-check-label fw-medium" for="general">⚠️ General</label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="earthquake" value="earthquake">
+              <label class="form-check-label fw-medium" for="earthquake">🌍 Earthquake</label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="fire" value="fire">
+              <label class="form-check-label fw-medium" for="fire">🔥 Wildfire</label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="severe_weather" value="severe_weather">
+              <label class="form-check-label fw-medium" for="severe_weather">⛈️ Severe Weather</label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="flood" value="flood">
+              <label class="form-check-label fw-medium" for="flood">🌊 Flooding</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input emergency-checkbox" type="radio" name="ragSource" id="hurricane" value="hurricane">
+              <label class="form-check-label fw-medium" for="hurricane">🌀 Hurricane</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
 </main>
+
+<!-- ===== Left Offcanvas: Chat History ===== -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="chatHistory" aria-labelledby="chatHistoryLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="chatHistoryLabel">Chat History <small>(this device)</small></h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body p-0 d-flex flex-column">
+    <div class="p-3 border-bottom">
+      <div class="input-group input-group-sm">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input id="historySearch" type="search" class="form-control" placeholder="Search history...">
+        <button id="historyClear" class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+      </div>
+    </div>
+    <div id="historyList" class="list-group list-group-flush overflow-auto" style="flex:1; max-height:calc(100vh - 140px)"></div>
+    <div class="p-2 text-center text-muted small border-top">Showing last 50</div>
+  </div>
+</div>
+
+<!-- Floating History Button -->
+<button class="btn btn-outline-dark history-fab" type="button" data-bs-toggle="offcanvas" data-bs-target="#chatHistory" aria-controls="chatHistory" title="Open chat history">
+  <i class="bi bi-clock-history me-1"></i> History
+</button>
 
 <!-- Bootstrap 5 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-const API = "http://localhost:7860";
-const sessionId = crypto.randomUUID();
+  const API="http://localhost:7860";
+  const sessionId=crypto.randomUUID();
 
-function getSelectedRagSource() {
-  const selected = document.querySelector('input[name="ragSource"]:checked');
-  return selected ? selected.value : "file";
-}
-
-const els = {
-  queryInput: document.getElementById("queryInput"),
-  askBtn: document.getElementById("askBtn"),
-  speakBtn: document.getElementById("speakBtn"),
-  recordBtn: document.getElementById("recordBtn"),
-  handsFree: document.getElementById("handsFree"),
-  status: document.getElementById("status"),
-  answerContent: document.getElementById("answerContent"),
-  player: document.getElementById("player"),
-  playBtn: document.getElementById("playBtn"),
-  playIcon: document.getElementById("playIcon"),
-  progressBar: document.getElementById("progressBar"),
-  timeLabel: document.getElementById("timeLabel"),
-  micIcon: document.getElementById("micIcon"),
-  audioPlayerDiv: document.querySelector('.audio-player.p-3'),
-  /* Location */
-  locPill: document.getElementById("locPill"),
-  locText: document.getElementById("locText"),
-  locWarn: document.getElementById("locWarn"),
-  shareLocSwitch: document.getElementById("shareLocSwitch"),
-  shareLocSwitchInline: document.getElementById("shareLocSwitchInline"),
-  enableLocBtn: document.getElementById("enableLocBtn"),
-  /* Contact edit */
-  editContactBtn: document.getElementById("editContactBtn"),
-  contactDisplay: document.getElementById("contactDisplay"),
-  contactEdit: document.getElementById("contactEdit"),
-  contactNumber: document.getElementById("contactNumber"),
-  contactInput: document.getElementById("contactInput"),
-  saveContactBtn: document.getElementById("saveContactBtn"),
-};
-
-let audioUrl = "";
-let lastAnswer = "";
-let recording = false;
-let mediaRecorder, chunks = [];
-
-/* ================================
-   Live location (existing robust v2.2)
-   ================================ */
-let currentLocation = null;      // { lat, lon, accuracy }
-let locWatchId = null;
-let permState = 'prompt';
-let locWaitTimeoutId = null;
-
-function loadSavedLocation() {
-  try { const raw = localStorage.getItem("aidmate_last_location"); if (raw) currentLocation = JSON.parse(raw); } catch {}
-}
-function saveLocation(loc) {
-  currentLocation = loc;
-  try { localStorage.setItem("aidmate_last_location", JSON.stringify(loc)); } catch {}
-}
-function fmtLoc(loc) {
-  if (!loc) return "Location: allowed (waiting…)";
-  const acc = (typeof loc.accuracy === "number") ? ` • ±${Math.round(loc.accuracy)}m` : "";
-  return `Location: On (${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}${acc})`;
-}
-function setPill(text) { els.locText.textContent = text; }
-function updateLocUIFromState() {
-  const sharing = !!(els.shareLocSwitch?.checked || els.shareLocSwitchInline?.checked);
-  if (permState === 'denied') { setPill("Location: denied"); els.locWarn.style.display = "block"; return; }
-  if (currentLocation) { setPill(fmtLoc(currentLocation)); els.locWarn.style.display = sharing ? "none" : "block"; return; }
-  setPill(permState === 'granted' ? "Location: allowed (waiting…)" : "Location: searching…");
-  els.locWarn.style.display = sharing ? "none" : "block";
-}
-async function detectPermission() {
-  if (!window.isSecureContext && location.hostname !== "localhost") { setPill("Location: unavailable (use HTTPS or localhost)"); }
-  if (navigator.permissions?.query) {
-    try {
-      const p = await navigator.permissions.query({ name: 'geolocation' });
-      permState = p.state;
-      p.onchange = () => { permState = p.state; updateLocUIFromState(); if (permState === 'granted') startWatch(); };
-    } catch {}
+  function getSelectedRagSource(){
+    const selected=document.querySelector('input[name="ragSource"]:checked');
+    return selected?selected.value:"file";
   }
-}
-function getOneFix(options) { return new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, options)); }
-function setWaitTimeout() {
-  if (locWaitTimeoutId) clearTimeout(locWaitTimeoutId);
-  locWaitTimeoutId = setTimeout(() => { if (!currentLocation && permState !== 'denied') setPill("Location: unavailable (check OS location)"); }, 20000);
-}
-async function startWatch() {
-  if (!("geolocation" in navigator)) { setPill("Location: unsupported"); els.locWarn.style.display = "block"; return; }
-  setWaitTimeout();
-  try {
-    const pos = await getOneFix({ enableHighAccuracy: false, maximumAge: 60000, timeout: 8000 });
-    const { latitude, longitude, accuracy } = pos.coords || {};
-    saveLocation({ lat: latitude, lon: longitude, accuracy: accuracy ?? null });
-    if (permState !== 'denied') permState = 'granted';
-    updateLocUIFromState();
-  } catch {}
-  if (locWatchId !== null) navigator.geolocation.clearWatch(locWatchId);
-  locWatchId = navigator.geolocation.watchPosition(
-    (pos) => { const { latitude, longitude, accuracy } = pos.coords || {};
-      saveLocation({ lat: latitude, lon: longitude, accuracy: accuracy ?? null });
-      if (permState !== 'denied') permState = 'granted'; updateLocUIFromState(); setWaitTimeout(); },
-    async (err) => {
-      if (err && err.code === err.PERMISSION_DENIED) { permState = 'denied'; updateLocUIFromState(); return; }
-      try {
-        const pos = await getOneFix({ enableHighAccuracy: false, maximumAge: 120000, timeout: 20000 });
-        const { latitude, longitude, accuracy } = pos.coords || {};
-        saveLocation({ lat: latitude, lon: longitude, accuracy: accuracy ?? null });
-        if (permState !== 'denied') permState = 'granted'; updateLocUIFromState();
-      } catch {
-        if (permState !== 'denied') {
-          setPill(currentLocation ? fmtLoc(currentLocation) : "Location: allowed (waiting…)");
-          const sharing = !!(els.shareLocSwitch?.checked || els.shareLocSwitchInline?.checked);
-          els.locWarn.style.display = sharing ? "none" : "block";
-        } else { setPill("Location: denied"); els.locWarn.style.display = "block"; }
-      }
-    },
-    { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 }
-  );
-}
-function syncLocationToggles(checked) {
-  if (els.shareLocSwitch) els.shareLocSwitch.checked = checked;
-  if (els.shareLocSwitchInline) els.shareLocSwitchInline.checked = checked;
-  updateLocUIFromState(); if (checked && permState !== 'denied') startWatch();
-}
-els.shareLocSwitch?.addEventListener("change", (e) => syncLocationToggles(e.target.checked));
-els.shareLocSwitchInline?.addEventListener("change", (e) => syncLocationToggles(e.target.checked));
-els.enableLocBtn?.addEventListener("click", () => { syncLocationToggles(true); startWatch(); });
-loadSavedLocation(); detectPermission().finally(() => { startWatch(); updateLocUIFromState(); });
-/* ================================ */
 
-if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
+  const els={
+    queryInput:document.getElementById("queryInput"),
+    askBtn:document.getElementById("askBtn"),
+    speakBtn:document.getElementById("speakBtn"),
+    recordBtn:document.getElementById("recordBtn"),
+    handsFree:document.getElementById("handsFree"),
+    status:document.getElementById("status"),
+    answerContent:document.getElementById("answerContent"),
+    player:document.getElementById("player"),
+    playBtn:document.getElementById("playBtn"),
+    playIcon:document.getElementById("playIcon"),
+    progressBar:document.getElementById("progressBar"),
+    timeLabel:document.getElementById("timeLabel"),
+    micIcon:document.getElementById("micIcon"),
+    audioPlayerDiv:document.querySelector('.audio-player.p-3'),
+    /* Location */
+    locPill:document.getElementById("locPill"),
+    locText:document.getElementById("locText"),
+    locWarn:document.getElementById("locWarn"),
+    shareLocSwitch:document.getElementById("shareLocSwitch"),
+    shareLocSwitchInline:document.getElementById("shareLocSwitchInline"),
+    enableLocBtn:document.getElementById("enableLocBtn"),
+    /* Contact edit */
+    editContactBtn:document.getElementById("editContactBtn"),
+    contactDisplay:document.getElementById("contactDisplay"),
+    contactEdit:document.getElementById("contactEdit"),
+    contactNumber:document.getElementById("contactNumber"),
+    contactInput:document.getElementById("contactInput"),
+    saveContactBtn:document.getElementById("saveContactBtn"),
+    /* Alerts */
+    alertsList:document.getElementById("alertsList"),
+    alertsUpdatedAt:document.getElementById("alertsUpdatedAt"),
+    alertsRefreshBtn:document.getElementById("alertsRefreshBtn"),
+    /* Collapse chevron */
+    ragChevron:document.getElementById("ragChevron"),
+    /* History */
+    historyList:document.getElementById("historyList"),
+    historySearch:document.getElementById("historySearch"),
+    historyClear:document.getElementById("historyClear"),
+  };
 
-/* --------- Emergency contact edit (NEW) ---------- */
-function sanitizeForTel(s) { return (s || "").replace(/[^\d+]/g, ""); }
-function getSavedContact() {
-  const saved = localStorage.getItem("aidmate_contact");
-  return saved && saved.trim() ? saved.trim() : null;
-}
-function loadContactNo() {
-  const current = getSavedContact() || els.contactNumber.textContent.trim();
-  els.contactNumber.textContent = current;
-  els.contactInput.value = current;
-  const a = document.querySelector("#contactDisplay a");
-  if (a) a.href = "tel:" + sanitizeForTel(current);
-}
-els.editContactBtn.addEventListener("click", () => {
-  els.contactDisplay.classList.add("d-none");
-  els.contactEdit.classList.remove("d-none");
-  els.contactInput.focus();
-});
-els.saveContactBtn.addEventListener("click", () => {
-  const val = els.contactInput.value.trim();
-  if (!val) return;
-  els.contactNumber.textContent = val;
-  localStorage.setItem("aidmate_contact", val);
-  const a = document.querySelector("#contactDisplay a");
-  if (a) a.href = "tel:" + sanitizeForTel(val);
-  els.contactEdit.classList.add("d-none");
-  els.contactDisplay.classList.remove("d-none");
-});
-loadContactNo();
-/* -------------------------------------------------- */
+  /* ===== Chat History (localStorage) ===== */
+  const HISTORY_KEY = "aidmate_chat_history_v1"; // device-only
+  const MAX_HISTORY = 50;
 
-/* --- Ask API --- */
-els.askBtn.onclick = async () => {
-  const text = els.queryInput.value.trim();
-  if (!text) return;
-  els.answerContent.textContent = "Thinking…";
-  els.speakBtn.disabled = true;
-  els.status.textContent = "";
-  audioUrl = ""; lastAnswer = "";
-  if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
-
-  const ragSource = getSelectedRagSource();
-
-  // include location only if sharing is enabled and we have coords
-  let locationPayload = null;
-  const share = (els.shareLocSwitch?.checked || els.shareLocSwitchInline?.checked);
-  if (share && currentLocation) locationPayload = { ...currentLocation };
-
-  // include contactNo
-  const contactNo = getSavedContact() || els.contactNumber.textContent.trim();
-
-  const res = await fetch(API + "/ask", {
-    method: "POST",
-    headers: {"Content-Type":"application/json", "x-session-id": sessionId},
-    body: JSON.stringify({
-      prompt: text,
-      crisis: ragSource,
-      model: "gpt-oss",
-      location: locationPayload,
-      contactNo: contactNo
-    })
-  }).then(r => r.json()).catch(e => ({error: e+""}));
-
-  if (res.error) { els.answerContent.textContent = "Error: " + res.error; return; }
-  els.answerContent.textContent = res.answer || "(no answer)";
-  lastAnswer = res.answer || "";
-  els.speakBtn.disabled = !lastAnswer;
-
-  if (!lastAnswer && els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none";
-  if (els.handsFree.checked && lastAnswer) { await speakReply(); }
-};
-
-/* --- TTS (unchanged) --- */
-async function speakReply() {
-  const text = els.answerContent.textContent.trim();
-  if (!text) return;
-  const fd = new FormData(); fd.append("text", text);
-  const data = await fetch(API + "/tts", { method: "POST", body: fd }).then(r => r.json());
-  if (data.audio_url) {
-    audioUrl = API + data.audio_url;
-    els.player.src = audioUrl;
-    els.player.style.display = "block";
-    if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "block";
-    els.player.play().catch(()=>{});
-    updateAudioUI();
-  } else { if (els.audioPlayerDiv) els.audioPlayerDiv.style.display = "none"; }
-}
-els.speakBtn.onclick = speakReply;
-
-/* --- Audio Player Controls (unchanged) --- */
-els.playBtn.onclick = () => {
-  if (!audioUrl) return;
-  if (els.player.paused) { els.player.play(); els.playIcon.classList.remove("bi-play-fill"); els.playIcon.classList.add("bi-pause-fill"); }
-  else { els.player.pause(); els.playIcon.classList.remove("bi-pause-fill"); els.playIcon.classList.add("bi-play-fill"); }
-};
-els.player.onplay = () => { els.playIcon.classList.remove("bi-play-fill"); els.playIcon.classList.add("bi-pause-fill"); };
-els.player.onpause = () => { els.playIcon.classList.remove("bi-pause-fill"); els.playIcon.classList.add("bi-play-fill"); };
-els.player.ontimeupdate = updateAudioUI;
-els.player.onended = () => { els.playIcon.classList.remove("bi-pause-fill"); els.playIcon.classList.add("bi-play-fill"); if (els.handsFree.checked) startRecording(); };
-function updateAudioUI() {
-  const cur = els.player.currentTime || 0, dur = els.player.duration || 0;
-  els.progressBar.style.width = dur ? ((cur/dur)*100).toFixed(1) + "%" : "0%";
-  els.timeLabel.textContent = `${Math.floor(cur/60)}:${String(Math.floor(cur%60)).padStart(2,"0")} / ${Math.floor(dur/60)}:${String(Math.floor(dur%60)).padStart(2,"0")}`;
-}
-
-/* --- STT (unchanged) --- */
-function pickMime() { const c=['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg']; for (const m of c) if (MediaRecorder.isTypeSupported(m)) return m; return ''; }
-async function startRecording() {
-  if (recording) return;
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mimeType = pickMime();
-    mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-    chunks = [];
-    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
-    mediaRecorder.onstop = async () => {
-      const chosenType = mediaRecorder.mimeType || 'audio/webm';
-      const ext = chosenType.includes('ogg') ? 'ogg' : 'webm';
-      const blob = new Blob(chunks, { type: chosenType });
-      els.status.textContent = "Transcribing…";
-      const fd = new FormData(); fd.append("file", blob, `speech.${ext}`);
-      const stt = await fetch(API + "/stt", { method: "POST", body: fd }).then(r => r.json()).catch(e => ({error:e+""}));
-      if (stt.error) { console.error(stt); alert("STT error: " + (stt.detail || stt.error)); els.status.textContent = ""; return; }
-      els.queryInput.value = stt.text || ""; els.status.textContent = "Asking…"; await els.askBtn.onclick(); els.status.textContent = "";
+  function loadHistory(){
+    try{
+      const raw = localStorage.getItem(HISTORY_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch{ return []; }
+  }
+  function saveHistory(list){
+    try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0,MAX_HISTORY))); }catch{}
+  }
+  function addHistoryItem(q,a){
+    if(!q && !a) return;
+    const list = loadHistory();
+    const item = {
+      id: crypto.randomUUID(),
+      ts: Date.now(),
+      crisis: getSelectedRagSource(),
+      q: q || "",
+      a: a || ""
     };
-    mediaRecorder.start(); recording = true; els.status.textContent = "Recording… release to stop"; els.micIcon.classList.add("recording-pulse");
-  } catch (e) { alert("Could not start recording: " + e); els.status.textContent = ""; }
-}
-function stopRecording() {
-  if (mediaRecorder && recording) { mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t => t.stop()); recording = false; els.micIcon.classList.remove("recording-pulse"); }
-}
-els.recordBtn.onmousedown = startRecording;
-els.recordBtn.onmouseup = stopRecording;
-els.recordBtn.onmouseleave = () => { if (recording) stopRecording(); };
-els.recordBtn.ontouchstart = (e)=>{ e.preventDefault(); startRecording(); };
-els.recordBtn.ontouchend = (e)=>{ e.preventDefault(); stopRecording(); };
+    list.unshift(item);
+    saveHistory(list);
+    renderHistory(); // refresh view if open
+  }
+  function fmtTime(ts){
+    try{
+      const d=new Date(ts);
+      return d.toLocaleString();
+    }catch{ return ""; }
+  }
+  function renderHistory(filter=""){
+    if(!els.historyList) return;
+    const list = loadHistory();
+    const f = (filter || "").toLowerCase();
+    const items = f ? list.filter(x => (x.q+x.a).toLowerCase().includes(f)) : list;
+    if(items.length===0){
+      els.historyList.innerHTML = `<div class="p-3 text-center text-muted">No history yet.</div>`;
+      return;
+    }
+    els.historyList.innerHTML = items.map(x => `
+      <button type="button" class="list-group-item list-group-item-action history-item text-start" data-id="${x.id}">
+        <div class="d-flex justify-content-between">
+          <div class="title me-2 truncate-2">${x.q || "(No prompt)"}</div>
+          <span class="badge bg-secondary align-self-start">${x.crisis || "general"}</span>
+        </div>
+        <div class="meta mt-1">${fmtTime(x.ts)}</div>
+        <div class="text-muted mt-1 truncate-2">${x.a || ""}</div>
+      </button>
+    `).join("");
+  }
+  els.historyList?.addEventListener("click",(e)=>{
+    const btn = e.target.closest(".history-item");
+    if(!btn) return;
+    const id = btn.getAttribute("data-id");
+    const list = loadHistory();
+    const item = list.find(x=>x.id===id);
+    if(!item) return;
+    // Restore into UI (non-destructive)
+    els.queryInput.value = item.q || "";
+    document.getElementById("answerContent").textContent = item.a || "—";
+    // Select crisis source (if exists)
+    if(item.crisis){
+      const input = document.querySelector(`input[name="ragSource"][value="${item.crisis}"]`);
+      if(input){ input.checked = true; }
+    }
+    // Close offcanvas
+    const canvasEl = document.getElementById('chatHistory');
+    const inst = bootstrap.Offcanvas.getOrCreateInstance(canvasEl);
+    inst.hide();
+  });
+  els.historySearch?.addEventListener("input", (e)=> renderHistory(e.target.value));
+  els.historyClear?.addEventListener("click", ()=>{
+    if(confirm("Clear all chat history on this device?")){
+      saveHistory([]); renderHistory();
+    }
+  });
 
-/* --- Message Status (unchanged) --- */
-const msgData={yellow:{title:"In Progress Messages",messages:[]},green:{title:"Sent Messages",messages:[]},blue:{title:"Received Messages",messages:["Hang tight! Help is on the way."]}};
-document.querySelectorAll('.msg-btn').forEach(btn=>{const cat=btn.getAttribute('data-category');const badge=btn.querySelector('.msg-badge');if(badge&&msgData[cat])badge.textContent=msgData[cat].messages.length;});
-let popupTimeout=null;
-function showMsgPopup(btn,category){hideMsgPopup();const data=msgData[category];if(!data)return;const popup=document.createElement('div');popup.className='msg-popup';popup.innerHTML=`<div class="popup-title">${data.title}</div><ul>${data.messages.map(m=>`<li>${m}</li>`).join('')}</ul>`;document.body.appendChild(popup);const rect=btn.getBoundingClientRect();popup.style.left=(rect.left+rect.width/2)+"px";popup.style.top=(rect.bottom+window.scrollY+8)+"px";setTimeout(()=>popup.classList.add('show'),10);btn._popup=popup;}
-function hideMsgPopup(){document.querySelectorAll('.msg-popup').forEach(p=>{p.classList.remove('show');setTimeout(()=>p.remove(),200);});}
-document.querySelectorAll('.msg-btn').forEach(btn=>{const cat=btn.getAttribute('data-category');btn.addEventListener('mouseenter',()=>{clearTimeout(popupTimeout);showMsgPopup(btn,cat);});btn.addEventListener('mouseleave',()=>{popupTimeout=setTimeout(hideMsgPopup,120);});btn.addEventListener('focus',()=>showMsgPopup(btn,cat));btn.addEventListener('blur',hideMsgPopup);});
-document.body.addEventListener('mouseover',e=>{if(!e.target.classList.contains('msg-popup')&&!e.target.classList.contains('msg-btn'))hideMsgPopup();});
-const messageStore=new Map();
-function normalizeApiPayload(payload){if(payload&&typeof payload==="object"&&payload.emergency_flag_cache&&typeof payload.emergency_flag_cache==="object"){const items=[];for(const[msg,status]of Object.entries(payload.emergency_flag_cache)){if(typeof msg==="string")items.push({id:msg,message:msg,status:!!status});}return items;}if(!payload)return[];if(Array.isArray(payload))return payload.filter(x=>x&&(typeof x.message==="string")).map(x=>({id:x.id||x.message,message:x.message,status:!!x.status}));if(typeof payload==="object"&&typeof payload.message==="string")return[{id:payload.id||payload.message,message:payload.message,status:!!payload.status}];if(typeof payload==="string")return[{id:payload,message:payload,status:false}];return[];}
-function upsertMessages(items){for(const item of items){const key=item.id||item.message;messageStore.set(key,{id:key,message:item.message,status:!!item.status});}const inProgress=[],sent=[];for(const{message,status}of messageStore.values()){(status?sent:inProgress).push(message);}msgData.yellow.messages=inProgress;msgData.green.messages=sent;updateBadgeCounts();refreshOpenPopupIfAny();}
-function updateBadgeCounts(){document.querySelectorAll('.msg-btn').forEach(btn=>{const cat=btn.getAttribute('data-category');const badge=btn.querySelector('.msg-badge');if(!badge)return;const list=(msgData[cat]?.messages)||[];badge.textContent=list.length;});}
-function refreshOpenPopupIfAny(){document.querySelectorAll('.msg-popup').forEach(popup=>{const titleEl=popup.querySelector('.popup-title');if(!titleEl)return;const title=titleEl.textContent.trim();let category=null;if(/In Progress/i.test(title))category='yellow';else if(/Sent Messages/i.test(title))category='green';else if(/Received Messages/i.test(title))category='blue';if(!category||!msgData[category])return;const ul=popup.querySelector('ul');if(!ul)return;ul.innerHTML=msgData[category].messages.map(m=>`<li>${m}</li>`).join('');});}
-async function pollMessageStatus(){try{const res=await fetch(API+"/",{headers:{"x-session-id":sessionId}});if(res.ok){let data=null;try{data=await res.json();}catch{data=null;}const items=normalizeApiPayload(data);if(items.length)upsertMessages(items);}}catch(err){}}
-pollMessageStatus(); setInterval(pollMessageStatus,5000);
+  // Render on load
+  renderHistory();
 
-window.onload = function() { document.getElementById("general").checked = true; };
+  /* Alerts mock renderer */
+  const MOCK_ALERTS=[
+    {title:"Hurricane path shifts 20 miles west", badge:"LIVE", badgeClass:"success", source:"NHC", ago:"Just now"},
+    {title:"Evacuation order: Zone B effective 6 PM", badge:"CRITICAL", badgeClass:"danger", source:"County EOC", ago:"4m"}
+  ];
+  function renderAlerts(items=MOCK_ALERTS){
+    if(!els.alertsList) return;
+    els.alertsList.innerHTML=items.map(a=>`
+      <div class="list-group-item d-flex justify-content-between align-items-start">
+        <div class="me-3">
+          <div class="fw-semibold">${a.title}</div>
+          <div class="text-muted small">Source: ${a.source} • ${a.ago}</div>
+        </div>
+        <span class="badge bg-${a.badgeClass} align-self-center">${a.badge}</span>
+      </div>
+    `).join("");
+    els.alertsUpdatedAt.textContent=new Date().toLocaleTimeString();
+  }
+  els?.alertsRefreshBtn?.addEventListener("click",()=>renderAlerts());
+
+  /* Collapsible chevron sync */
+  (function(){
+    const collapseEl=document.getElementById('ragCollapse');
+    if(!collapseEl) return;
+    const setChevron=()=>{
+      if(collapseEl.classList.contains('show')){ els.ragChevron?.classList.remove('rotate'); }
+      else{ els.ragChevron?.classList.add('rotate'); }
+    };
+    setChevron();
+    collapseEl.addEventListener('shown.bs.collapse',setChevron);
+    collapseEl.addEventListener('hidden.bs.collapse',setChevron);
+  })();
+
+  /* ===== Location (unchanged core) ===== */
+  let currentLocation=null, locWatchId=null, permState='prompt', locWaitTimeoutId=null;
+
+  function loadSavedLocation(){ try{ const raw=localStorage.getItem("aidmate_last_location"); if(raw) currentLocation=JSON.parse(raw);}catch{} }
+  function saveLocation(loc){ currentLocation=loc; try{ localStorage.setItem("aidmate_last_location",JSON.stringify(loc)); }catch{} }
+  function fmtLoc(loc){ if(!loc) return "Location: allowed (waiting…)"; const acc=(typeof loc.accuracy==="number")?` • ±${Math.round(loc.accuracy)}m`:""; return `Location: On (${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}${acc})`; }
+  function setPill(text){ els.locText.textContent=text; }
+  function updateLocUIFromState(){
+    const sharing=!!(els.shareLocSwitch?.checked||els.shareLocSwitchInline?.checked);
+    if(permState==='denied'){ setPill("Location: denied"); els.locWarn.style.display="block"; return; }
+    if(currentLocation){ setPill(fmtLoc(currentLocation)); els.locWarn.style.display=sharing?"none":"block"; return; }
+    setPill(permState==='granted'?"Location: allowed (waiting…)":"Location: searching…");
+    els.locWarn.style.display=sharing?"none":"block";
+  }
+  async function detectPermission(){
+    if(!window.isSecureContext && location.hostname!=="localhost"){ setPill("Location: unavailable (use HTTPS or localhost)"); }
+    if(navigator.permissions?.query){
+      try{
+        const p=await navigator.permissions.query({name:'geolocation'});
+        permState=p.state;
+        p.onchange=()=>{ permState=p.state; updateLocUIFromState(); if(permState==='granted') startWatch(); };
+      }catch{}
+    }
+  }
+  function getOneFix(options){ return new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,options)); }
+  function setWaitTimeout(){
+    if(locWaitTimeoutId) clearTimeout(locWaitTimeoutId);
+    locWaitTimeoutId=setTimeout(()=>{ if(!currentLocation && permState!=='denied') setPill("Location: unavailable (check OS location)"); },20000);
+    }
+  async function startWatch(){
+    if(!("geolocation" in navigator)){ setPill("Location: unsupported"); els.locWarn.style.display="block"; return; }
+    setWaitTimeout();
+    try{
+      const pos=await getOneFix({enableHighAccuracy:false, maximumAge:60000, timeout:8000});
+      const {latitude, longitude, accuracy}=pos.coords||{};
+      saveLocation({lat:latitude, lon:longitude, accuracy:accuracy??null});
+      if(permState!=='denied') permState='granted';
+      updateLocUIFromState();
+    }catch{}
+    if(locWatchId!==null) navigator.geolocation.clearWatch(locWatchId);
+    locWatchId=navigator.geolocation.watchPosition(
+      (pos)=>{ const {latitude, longitude, accuracy}=pos.coords||{};
+        saveLocation({lat:latitude, lon:longitude, accuracy:accuracy??null});
+        if(permState!=='denied') permState='granted'; updateLocUIFromState(); setWaitTimeout(); },
+      async (err)=>{
+        if(err && err.code===err.PERMISSION_DENIED){ permState='denied'; updateLocUIFromState(); return; }
+        try{
+          const pos=await getOneFix({enableHighAccuracy:false, maximumAge:120000, timeout:20000});
+          const {latitude, longitude, accuracy}=pos.coords||{};
+          saveLocation({lat:latitude, lon:longitude, accuracy:accuracy??null});
+          if(permState!=='denied') permState='granted'; updateLocUIFromState();
+        }catch{
+          if(permState!=='denied'){
+            setPill(currentLocation?fmtLoc(currentLocation):"Location: allowed (waiting…)");
+            const sharing=!!(els.shareLocSwitch?.checked||els.shareLocSwitchInline?.checked);
+            els.locWarn.style.display=sharing?"none":"block";
+          }else{ setPill("Location: denied"); els.locWarn.style.display="block"; }
+        }
+      },
+      {enableHighAccuracy:true, maximumAge:30000, timeout:15000}
+    );
+  }
+  function syncLocationToggles(checked){
+    if(els.shareLocSwitch) els.shareLocSwitch.checked=checked;
+    if(els.shareLocSwitchInline) els.shareLocSwitchInline.checked=checked;
+    updateLocUIFromState(); if(checked && permState!=='denied') startWatch();
+  }
+  els.shareLocSwitch?.addEventListener("change",(e)=>syncLocationToggles(e.target.checked));
+  els.shareLocSwitchInline?.addEventListener("change",(e)=>syncLocationToggles(e.target.checked));
+  els.enableLocBtn?.addEventListener("click",()=>{ syncLocationToggles(true); startWatch(); });
+  loadSavedLocation(); detectPermission().finally(()=>{ startWatch(); updateLocUIFromState(); });
+
+  if(els.audioPlayerDiv) els.audioPlayerDiv.style.display="none";
+
+  /* Contact edit */
+  function sanitizeForTel(s){ return (s||"").replace(/[^\d+]/g,""); }
+  function getSavedContact(){ const saved=localStorage.getItem("aidmate_contact"); return saved && saved.trim()?saved.trim():null; }
+  function loadContactNo(){
+    const current=getSavedContact() || els.contactNumber.textContent.trim();
+    els.contactNumber.textContent=current;
+    els.contactInput.value=current;
+    const a=document.querySelector("#contactDisplay a");
+    if(a) a.href="tel:"+sanitizeForTel(current);
+  }
+  els.editContactBtn.addEventListener("click",()=>{ els.contactDisplay.classList.add("d-none"); els.contactEdit.classList.remove("d-none"); els.contactInput.focus(); });
+  els.saveContactBtn.addEventListener("click",()=>{
+    const val=els.contactInput.value.trim(); if(!val) return;
+    els.contactNumber.textContent=val; localStorage.setItem("aidmate_contact",val);
+    const a=document.querySelector("#contactDisplay a"); if(a) a.href="tel:"+sanitizeForTel(val);
+    els.contactEdit.classList.add("d-none"); els.contactDisplay.classList.remove("d-none");
+  });
+  loadContactNo();
+
+  /* Ask API (unchanged logic; adds a tiny history save) */
+  els.askBtn.onclick=async ()=>{
+    const text=els.queryInput.value.trim(); if(!text) return;
+    els.answerContent.textContent="Thinking…";
+    els.speakBtn.disabled=true; els.status.textContent="";
+    let audioUrl=""; let lastAnswer="";
+    if(els.audioPlayerDiv) els.audioPlayerDiv.style.display="none";
+
+    const ragSource=getSelectedRagSource();
+
+    let locationPayload=null;
+    const share=(els.shareLocSwitch?.checked||els.shareLocSwitchInline?.checked);
+    if(share && currentLocation) locationPayload={...currentLocation};
+
+    const contactNo=getSavedContact() || els.contactNumber.textContent.trim();
+
+    const res=await fetch(API+"/ask",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-session-id":sessionId},
+      body:JSON.stringify({ prompt:text, crisis:ragSource, model:"gpt-oss", location:locationPayload, contactNo })
+    }).then(r=>r.json()).catch(e=>({error:e+""}));
+
+    if(res.error){ els.answerContent.textContent="Error: "+res.error; return; }
+    els.answerContent.textContent=res.answer || "(no answer)";
+    lastAnswer=res.answer || "";
+    els.speakBtn.disabled=!lastAnswer;
+
+    // ---- Save to history (new) ----
+    try{ addHistoryItem(text, lastAnswer); }catch{}
+
+    if(!lastAnswer && els.audioPlayerDiv) els.audioPlayerDiv.style.display="none";
+    if(els.handsFree.checked && lastAnswer){ await speakReply(); }
+  };
+
+  /* TTS */
+  async function speakReply(){
+    const text=els.answerContent.textContent.trim(); if(!text) return;
+    const fd=new FormData(); fd.append("text",text);
+    const data=await fetch(API+"/tts",{method:"POST", body:fd}).then(r=>r.json());
+    if(data.audio_url){
+      const audioUrl=API+data.audio_url;
+      els.player.src=audioUrl; els.player.style.display="block";
+      if(els.audioPlayerDiv) els.audioPlayerDiv.style.display="block";
+      els.player.play().catch(()=>{}); updateAudioUI();
+    } else { if(els.audioPlayerDiv) els.audioPlayerDiv.style.display="none"; }
+  }
+  els.speakBtn.onclick=speakReply;
+
+  /* Player */
+  els.playBtn.onclick=()=>{
+    if(!els.player.src) return;
+    if(els.player.paused){ els.player.play(); els.playIcon.classList.replace("bi-play-fill","bi-pause-fill"); }
+    else { els.player.pause(); els.playIcon.classList.replace("bi-pause-fill","bi-play-fill"); }
+  };
+  els.player.onplay=()=>{ els.playIcon.classList.replace("bi-play-fill","bi-pause-fill"); };
+  els.player.onpause=()=>{ els.playIcon.classList.replace("bi-pause-fill","bi-play-fill"); };
+  els.player.ontimeupdate=updateAudioUI;
+  els.player.onended=()=>{ els.playIcon.classList.replace("bi-pause-fill","bi-play-fill"); if(els.handsFree.checked) startRecording(); };
+  function updateAudioUI(){
+    const cur=els.player.currentTime||0, dur=els.player.duration||0;
+    els.progressBar.style.width=dur?((cur/dur)*100).toFixed(1)+"%":"0%";
+    els.timeLabel.textContent=`${Math.floor(cur/60)}:${String(Math.floor(cur%60)).padStart(2,"0")} / ${Math.floor(dur/60)}:${String(Math.floor(dur%60)).padStart(2,"0")}`;
+  }
+
+  /* STT */
+  function pickMime(){ const c=['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg']; for(const m of c) if(MediaRecorder.isTypeSupported(m)) return m; return ''; }
+  let recording=false, mediaRecorder, chunks=[];
+  async function startRecording(){
+    if(recording) return;
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      const mimeType=pickMime();
+      mediaRecorder=mimeType?new MediaRecorder(stream,{mimeType}):new MediaRecorder(stream);
+      chunks=[]; mediaRecorder.ondataavailable=e=>{ if(e.data && e.data.size>0) chunks.push(e.data); };
+      mediaRecorder.onstop=async ()=>{
+        const chosenType=mediaRecorder.mimeType || 'audio/webm';
+        const ext=chosenType.includes('ogg')?'ogg':'webm';
+        const blob=new Blob(chunks,{type:chosenType});
+        els.status.textContent="Transcribing…";
+        const fd=new FormData(); fd.append("file",blob,`speech.${ext}`);
+        const stt=await fetch(API+"/stt",{method:"POST", body:fd}).then(r=>r.json()).catch(e=>({error:e+""}));
+        if(stt.error){ console.error(stt); alert("STT error: "+(stt.detail||stt.error)); els.status.textContent=""; return; }
+        els.queryInput.value=stt.text || ""; els.status.textContent="Asking…"; await els.askBtn.onclick(); els.status.textContent="";
+      };
+      mediaRecorder.start(); recording=true; els.status.textContent="Recording… release to stop"; els.micIcon.classList.add("recording-pulse");
+    }catch(e){ alert("Could not start recording: "+e); els.status.textContent=""; }
+  }
+  function stopRecording(){
+    if(mediaRecorder && recording){ mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t=>t.stop()); recording=false; els.micIcon.classList.remove("recording-pulse"); }
+  }
+  document.getElementById("recordBtn").onmousedown=startRecording;
+  document.getElementById("recordBtn").onmouseup=stopRecording;
+  document.getElementById("recordBtn").onmouseleave=()=>{ if(recording) stopRecording(); };
+  document.getElementById("recordBtn").ontouchstart=(e)=>{ e.preventDefault(); startRecording(); };
+  document.getElementById("recordBtn").ontouchend=(e)=>{ e.preventDefault(); stopRecording(); };
+
+  /* Message Status (unchanged) */
+  const msgData={yellow:{title:"In Progress Messages",messages:[]},green:{title:"Sent Messages",messages:[]},blue:{title:"Received Messages",messages:["Hang tight! Help is on the way."]}};
+  document.querySelectorAll('.msg-btn').forEach(btn=>{const cat=btn.getAttribute('data-category'); const badge=btn.querySelector('.msg-badge'); if(badge&&msgData[cat]) badge.textContent=msgData[cat].messages.length;});
+  let popupTimeout=null;
+  function showMsgPopup(btn,category){ hideMsgPopup(); const data=msgData[category]; if(!data) return;
+    const popup=document.createElement('div'); popup.className='msg-popup';
+    popup.innerHTML=`<div class="popup-title">${data.title}</div><ul>${data.messages.map(m=>`<li>${m}</li>`).join('')}</ul>`;
+    document.body.appendChild(popup); const rect=btn.getBoundingClientRect();
+    popup.style.left=(rect.left+rect.width/2)+"px"; popup.style.top=(rect.bottom+window.scrollY+8)+"px";
+    setTimeout(()=>popup.classList.add('show'),10); btn._popup=popup;
+  }
+  function hideMsgPopup(){ document.querySelectorAll('.msg-popup').forEach(p=>{ p.classList.remove('show'); setTimeout(()=>p.remove(),200); }); }
+  document.querySelectorAll('.msg-btn').forEach(btn=>{
+    const cat=btn.getAttribute('data-category');
+    btn.addEventListener('mouseenter',()=>{ clearTimeout(popupTimeout); showMsgPopup(btn,cat); });
+    btn.addEventListener('mouseleave',()=>{ popupTimeout=setTimeout(hideMsgPopup,120); });
+    btn.addEventListener('focus',()=>showMsgPopup(btn,cat));
+    btn.addEventListener('blur',hideMsgPopup);
+  });
+  document.body.addEventListener('mouseover',e=>{ if(!e.target.classList.contains('msg-popup') && !e.target.classList.contains('msg-btn')) hideMsgPopup(); });
+  const messageStore=new Map();
+  function normalizeApiPayload(payload){
+    if(payload&&typeof payload==="object"&&payload.emergency_flag_cache&&typeof payload.emergency_flag_cache==="object"){
+      const items=[]; for(const[msg,status] of Object.entries(payload.emergency_flag_cache)){ if(typeof msg==="string") items.push({id:msg,message:msg,status:!!status}); } return items;
+    }
+    if(!payload) return [];
+    if(Array.isArray(payload)) return payload.filter(x=>x&&(typeof x.message==="string")).map(x=>({id:x.id||x.message,message:x.message,status:!!x.status}));
+    if(typeof payload==="object"&&typeof payload.message==="string") return [{id:payload.id||payload.message,message:payload.message,status:!!payload.status}];
+    if(typeof payload==="string") return [{id:payload,message:payload,status:false}];
+    return [];
+  }
+  function upsertMessages(items){
+    for(const item of items){ const key=item.id||item.message; messageStore.set(key,{id:key,message:item.message,status:!!item.status}); }
+    const inProgress=[], sent=[]; for(const {message,status} of messageStore.values()){ (status?sent:inProgress).push(message); }
+    msgData.yellow.messages=inProgress; msgData.green.messages=sent; updateBadgeCounts(); refreshOpenPopupIfAny();
+  }
+  function updateBadgeCounts(){ document.querySelectorAll('.msg-btn').forEach(btn=>{ const cat=btn.getAttribute('data-category'); const badge=btn.querySelector('.msg-badge'); if(!badge) return; const list=(msgData[cat]?.messages)||[]; badge.textContent=list.length; }); }
+  function refreshOpenPopupIfAny(){
+    document.querySelectorAll('.msg-popup').forEach(popup=>{
+      const titleEl=popup.querySelector('.popup-title'); if(!titleEl) return;
+      const title=titleEl.textContent.trim(); let category=null;
+      if(/In Progress/i.test(title)) category='yellow'; else if(/Sent Messages/i.test(title)) category='green'; else if(/Received Messages/i.test(title)) category='blue';
+      if(!category||!msgData[category]) return;
+      const ul=popup.querySelector('ul'); if(!ul) return; ul.innerHTML=msgData[category].messages.map(m=>`<li>${m}</li>`).join('');
+    });
+  }
+  async function pollMessageStatus(){
+    try{
+      const res=await fetch(API+"/",{headers:{"x-session-id":sessionId}});
+      if(res.ok){ let data=null; try{ data=await res.json(); }catch{ data=null; }
+        const items=normalizeApiPayload(data); if(items.length) upsertMessages(items);
+      }
+    }catch(err){}
+  }
+  pollMessageStatus(); setInterval(pollMessageStatus,5000);
+
+  /* Init */
+  window.onload=function(){ document.getElementById("general").checked=true; renderAlerts(); };
 </script>
 </body>
 </html>
