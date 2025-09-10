@@ -15,9 +15,13 @@ Run the script in order 1 -5 as shown below-
 03_setup_piper.ps1
 04_create_pipeline.ps1
 05_setup_whisper.ps1
+06_ollama_mini_alias.ps1
 
-note : after running the 01_ollama_setup.ps1, it will open the new command window and run teh ollama server, so leave it running.
+Once the above one time script run is completed, going foreard we only need to run below script-
+run_aidmate.ps1
 
+
+##Troubkeshoot purpose###
 Once you complete the setup scripts then close the pwershell window (but dont close the ollama server window)
 Make sure Ollama is running
 If not then start it by running the following command in a new:
@@ -27,9 +31,7 @@ Edit
 & "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" serve
 Start your FastAPI backend
 
-Then in vscode terminal run the following commands:
-
-cd C:\SourceCode\AidMate
+To Run teh Fast API in VS code locally, follow below steps-
 .\.venv\Scripts\activate
 uvicorn app:app --host 0.0.0.0 --port 7860 --reload
 
