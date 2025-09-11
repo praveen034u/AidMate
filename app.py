@@ -1,4 +1,4 @@
-﻿# app.py  (voice-powered, optimized for CPU, no-RAG by default unless index exists)
+# app.py  (voice-powered, optimized for CPU, no-RAG by default unless index exists)
 
 import os, uuid, subprocess, re, shutil, tempfile
 from pathlib import Path
@@ -54,6 +54,16 @@ OLLAMA_GEN_URL = f"http://{OLLAMA_HOST}/api/generate"
 OLLAMA_EMBED_MODEL = os.environ.get("OLLAMA_EMBED_MODEL", "all-minilm:latest")
 # Lightweight chat model we’ll alias to when code asks for "gpt-oss"
 OLLAMA_CHAT_MODEL_DEFAULT = os.environ.get("OLLAMA_CHAT_MODEL", "phi3:mini")
+
+# OpenAI (online helper) - need to use env vars in real deployment or secrets manager or Azure Key Vault or environment-specific config
+# OPENAI_API_KEY  = os.environ.get("OPENAI_API_KEY", "").strip()
+# OPENAI_API_BASE = os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1").rstrip("/")
+# OPENAI_CHAT_MODEL = os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o-mini").strip()
+
+# OpenAI (online helper) — hardcoded (no env variables)
+OPENAI_API_KEY  = "sk-REPLACE_WITH_YOUR_REAL_KEY" 
+OPENAI_API_BASE = "https://api.openai.com/v1"  # keep default
+OPENAI_CHAT_MODEL = "gpt-4o-mini"              # or "gpt-4o"
 
 # Vector DB
 VECTOR_DB_ROOT = Path("./vectordb")
@@ -166,7 +176,7 @@ MODEL_ALIASES = {
 }
 
 def resolve_chat_model(requested: str) -> str:
-    # If caller passes an Ollama name directly, use it; else map "gpt-oss*" -> lightweight alias
+        # If caller passes an Ollama name directly, use it; else map "gpt-oss*" -> lightweight alias
     return MODEL_ALIASES.get((requested or "").lower(), requested or OLLAMA_CHAT_MODEL_DEFAULT)
 
 # -------------------------
@@ -178,7 +188,7 @@ _VECTORSTORE: Optional[FAISS] = None
 def get_embeddings() -> OllamaEmbeddings:
     global _EMBEDDINGS
     if _EMBEDDINGS is None:
-        # Keep dimensions tiny and CPU friendly
+                # Keep dimensions tiny and CPU friendly
         _EMBEDDINGS = OllamaEmbeddings(model=OLLAMA_EMBED_MODEL)
     return _EMBEDDINGS
 
@@ -188,14 +198,14 @@ def load_vectorstore_if_exists(crisis: str) -> Optional[FAISS]:
         return _VECTORSTORE
 
     # Build path as Path object
-    vectordbPath = Path(INDEX_PATH) / crisis  
-
+    vectordbPath = Path(INDEX_PATH) / crisis 
+    
     if vectordbPath.exists() and any(vectordbPath.glob("*")):
         try:
             emb = get_embeddings()
             _VECTORSTORE = FAISS.load_local(
-                str(vectordbPath),
-                emb,
+                str(vectordbPath), 
+                emb, 
                 allow_dangerous_deserialization=True
             )
             return _VECTORSTORE
@@ -230,13 +240,13 @@ class Location(BaseModel):
     @field_validator("latitude", "longitude", "accuracy", mode="before")
     @classmethod
     def _coerce_str_to_float(cls, v):
-        if v is None:
+        if v is None: 
             return v
-        if isinstance(v, (int, float)):
+        if isinstance(v, (int, float)): 
             return float(v)
         # allow numeric strings
         return float(str(v).strip())
-    
+
 class AskBody(BaseModel):
     prompt: str
     crisis: Optional[str] = None
@@ -252,6 +262,8 @@ class AskBody(BaseModel):
     # Updated: strongly-typed location object
     location: Optional[Location] = None
     contactNo: Optional[str] = None
+    # from UI: "auto" | "openai" | "ollama"
+    engine: Optional[str] = "auto"
 
 @app.get("/")
 async def root():
@@ -266,6 +278,44 @@ def health():
         "index_exists": any(INDEX_PATH.glob("*"))
     }
 
+# -------------------------
+# Online helper (OpenAI)
+# -------------------------
+def can_use_openai(timeout: float = 3.0) -> bool:
+    if not OPENAI_API_KEY:
+        return False
+    try:
+        r = requests.get(f"{OPENAI_API_BASE}/models",
+                         headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
+                         timeout=timeout)
+        return r.status_code < 500
+    except Exception:
+        return False
+
+def call_openai_chat(full_prompt: str, system_prefix: str = "") -> str:
+    url = f"{OPENAI_API_BASE}/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    messages = []
+    if system_prefix:
+        messages.append({"role": "system", "content": system_prefix.strip()})
+    messages.append({"role": "user", "content": full_prompt})
+    payload = {"model": OPENAI_CHAT_MODEL, "messages": messages, "temperature": 0.2}
+    try:
+        r = requests.post(url, json=payload, headers=headers, timeout=60)
+        r.raise_for_status()
+        data = r.json()
+        txt = (data.get("choices") or [{}])[0].get("message", {}).get("content", "")
+        return (txt or "").strip()
+    except Exception as e:
+        print(f"[OpenAI] falling back due to error: {e}")
+        return ""
+
+# -------------------------
+# Core ask
+# -------------------------
 def _loc_to_meta(location) -> str:
     """
     Build a neutral metadata line from a Location model (v2) or dict fallback.
@@ -288,7 +338,7 @@ def _loc_to_meta(location) -> str:
 
     if lat is None or lon is None:
         return ""
-
+   
     meta = "[User Location]\n"
     meta += f"Latitude: {lat}, Longitude: {lon}"
     if acc is not None:
@@ -313,14 +363,14 @@ def ask(body: AskBody, x_session_id: Optional[str] = Header(default="")):
                 loc_log = body.location            # last resort (already a dict/other)
         print("Location:", loc_log)
 
-    if body.contactNo:
-        print("ContactNo:", body.contactNo)
-
+        if body.contactNo:
+         print("ContactNo:", body.contactNo)
+    
     # Background flag detection (pass the Location model; your worker can accept it)
     # If your detectEmergencyFlag expects a dict, change the next line to:
     # detectEmergencyFlag(body.prompt, body.contactNo, getattr(body.location, "model_dump", lambda: body.location)())
-    detectEmergencyFlag(body.prompt, body.contactNo, body.location)
-
+        detectEmergencyFlag(body.prompt, body.contactNo, body.location)
+    
     # Assemble conversation
     history = render_history(x_session_id)
     sys_prefix = (body.system + "\n\n") if body.system else ""
@@ -333,19 +383,41 @@ def ask(body: AskBody, x_session_id: Optional[str] = Header(default="")):
     if body.contactNo:
         meta += "[Contact]\n" + str(body.contactNo).strip() + "\n"
 
-    # Prefer RAG if an index exists for the selected crisis
-    vector = load_vectorstore_if_exists(body.crisis)
+    # Engine decision
+    engine_req = (body.engine or "auto").lower().strip()
+    use_openai = (engine_req == "openai") or (engine_req == "auto" and can_use_openai())
+    engine_used = None
+    print(f"[engine] requested={engine_req} -> use_openai={use_openai}")
+
+    # Prefer RAG (kept as-is with Ollama for minimal changes)
+    vector = load_vectorstore_if_exists(body.crisis) if body.crisis else None
     if vector is not None:
         reply = call_rag(body.prompt, requested_model, vector)
+        engine_used = "ollama"
     else:
-        reply = call_ollama(sys_prefix + meta + convo + "User: " + body.prompt + "\nAssistant:", requested_model)
+        full_prompt = sys_prefix + meta + convo + "User: " + body.prompt + "\nAssistant:"
+        if use_openai:
+            reply = call_openai_chat(full_prompt, system_prefix="")
+            engine_used = "openai" if reply else None
+            if not reply:
+                reply = call_ollama(full_prompt, requested_model)
+                engine_used = "ollama"
+        else:
+            reply = call_ollama(full_prompt, requested_model)
+            engine_used = "ollama"
 
-    if any(indicator in (reply or "").lower() for indicator in no_answer_indicators):
-        reply = call_ollama(sys_prefix + meta + convo + "User: " + body.prompt + "\nAssistant:", requested_model)
+    # Second-chance if weak
+    if not reply or any(ind in reply.lower() for ind in no_answer_indicators):
+        full_prompt = sys_prefix + meta + convo + "User: " + body.prompt + "\nAssistant:"
+        backup = call_ollama(full_prompt, requested_model)
+        if backup:
+            reply = backup
+            engine_used = "ollama"
 
     push_turn(x_session_id, "user", body.prompt)
     push_turn(x_session_id, "assistant", reply)
-    return {"answer": reply, "session": x_session_id or ""}
+    return {"answer": reply, "session": x_session_id or "", "engine": engine_used or ("openai" if use_openai else "ollama")}
+
 
 @app.post("/tts")
 def tts(text: str = Form(...)):
