@@ -14,7 +14,7 @@ param(
   [string]$Mode = "api",
 
   # FastAPI port
-  [int]$ApiPort = 7860,
+  [int]$ApiPort = 8003,
 
   # Preferred Ollama host:port (leave empty to auto-pick a free port starting at 11434)
   [string]$OllamaHost = ""
@@ -44,6 +44,12 @@ Set-Location $workspace
 # --------------------------
 # Helpers
 # --------------------------
+function Test-HttpOk { param([string]$Url,[int]$TimeoutSec=2)
+  try {
+    $resp = Invoke-WebRequest -Uri $Url -Method GET -TimeoutSec $TimeoutSec -UseBasicParsing
+    return ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 400)
+  } catch { return $false }
+}
 function Test-PortFree { param([int]$Port)
   $net = netstat -ano | Select-String ":$Port\s"
   if (-not $net) { return $true } else { return $false }
@@ -127,11 +133,29 @@ function Ensure-Venv-And-Install {
   }
 }
 function Open-UI {
-  if (Test-Path $uiFile) {
-    Write-Host "[INFO] Opening web UI..." -ForegroundColor Yellow
-    Start-Process $uiFile | Out-Null
+  param(
+    [int]$ApiPort,
+    [string]$UiFile
+  )
+  $url = "http://localhost/"
+
+  # Try the API URL first (a few quick retries while uvicorn finishes booting)
+  $maxTries = 10
+  for ($i=1; $i -le $maxTries; $i++) {
+    if (Test-HttpOk -Url $url -TimeoutSec 2) {
+      Write-Host "[INFO] Opening web UI at $url ..." -ForegroundColor Yellow
+      Start-Process $url | Out-Null
+      return
+    }
+    Start-Sleep -Milliseconds 500
+  }
+
+  # Fallback: open the static HTML file directly if present
+  if (Test-Path $UiFile) {
+    Write-Host "[WARN] API not reachable yet; opening local UI file instead: $UiFile" -ForegroundColor Yellow
+    Start-Process $UiFile | Out-Null
   } else {
-    Write-Host "[WARN] web\index.html not found; you can still hit the API at http://localhost:$ApiPort" -ForegroundColor Yellow
+    Write-Host "[WARN] Neither API ($url) nor UI file ($UiFile) available. You can still hit the API later at $url" -ForegroundColor Yellow
   }
 }
 
@@ -164,7 +188,7 @@ switch ($Mode) {
     Write-Host "[OK] FastAPI started (PID $($uv.Id))" -ForegroundColor Green
 
     # Open the HTML UI if present
-    Open-UI
+    Open-UI -ApiPort 8080 -UiFile $uiFile
 
     Write-Host ""
     Write-Host "API:    http://localhost:$ApiPort" -ForegroundColor Cyan
