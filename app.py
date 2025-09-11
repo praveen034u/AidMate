@@ -12,8 +12,7 @@ from fastapi import FastAPI, Form, UploadFile, File, Header, HTTPException, stat
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
-
+from pydantic import BaseModel, Field, field_validator
 # ---- LangChain / FAISS
 from langchain_community.document_loaders import TextLoader, CSVLoader, PyPDFLoader
 from langchain_community.vectorstores import FAISS
@@ -220,6 +219,24 @@ app.add_middleware(
 )
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+class Location(BaseModel):
+    latitude: float = Field(..., ge=-90.0, le=90.0, description="WGS84 latitude in degrees")
+    longitude: float = Field(..., ge=-180.0, le=180.0, description="WGS84 longitude in degrees")
+    accuracy: Optional[float] = Field(
+        None, ge=0.0, description="Horizontal accuracy radius in meters"
+    )
+
+    # (Optional) accept strings like "41.8781" and coerce to float
+    @field_validator("latitude", "longitude", "accuracy", mode="before")
+    @classmethod
+    def _coerce_str_to_float(cls, v):
+        if v is None:
+            return v
+        if isinstance(v, (int, float)):
+            return float(v)
+        # allow numeric strings
+        return float(str(v).strip())
+    
 class AskBody(BaseModel):
     prompt: str
     crisis: Optional[str] = None
@@ -232,8 +249,8 @@ class AskBody(BaseModel):
         "- Avoid decorative symbols; keep content clean and readable.\n"
         "- If you are unsure or the information is not available, say \"I don't know\"."
     )
-    # NEW: optional fields from the UI
-    location: Optional[Dict[str, float]] = None
+    # Updated: strongly-typed location object
+    location: Optional[Location] = None
     contactNo: Optional[str] = None
 
 @app.get("/")
@@ -249,41 +266,74 @@ def health():
         "index_exists": any(INDEX_PATH.glob("*"))
     }
 
+def _loc_to_meta(location) -> str:
+    """
+    Build a neutral metadata line from a Location model (v2) or dict fallback.
+    """
+    if not location:
+        return ""
+    # Try attributes (Location model), fall back to dict-like access
+    lat = getattr(location, "latitude", None)
+    lon = getattr(location, "longitude", None)
+    acc = getattr(location, "accuracy", None)
+
+    if lat is None or lon is None:
+        # dict-style fallback if a plain dict was sent
+        try:
+            lat = location.get("latitude", location.get("lat"))
+            lon = location.get("longitude", location.get("lon"))
+            acc = location.get("accuracy")
+        except Exception:
+            return ""
+
+    if lat is None or lon is None:
+        return ""
+
+    meta = "[User Location]\n"
+    meta += f"Latitude: {lat}, Longitude: {lon}"
+    if acc is not None:
+        meta += f", Accuracy≈{acc}m"
+    return meta + "\n"
+
+
 @app.post("/ask")
 def ask(body: AskBody, x_session_id: Optional[str] = Header(default="")):
     print("Ask:", body.prompt)
     print("Session:", x_session_id or "(new)")
     print("Crisis:", body.crisis)
-    if body.location:  # log for server visibility
-        print("Location:", body.location)
+
+    # Robust location logging for both Pydantic v2 and v1 (or dict fallback)
+    if body.location:
+        try:
+            loc_log = body.location.model_dump()   # Pydantic v2
+        except AttributeError:
+            try:
+                loc_log = body.location.dict()     # Pydantic v1
+            except AttributeError:
+                loc_log = body.location            # last resort (already a dict/other)
+        print("Location:", loc_log)
+
     if body.contactNo:
         print("ContactNo:", body.contactNo)
 
-    # background flag detection
-    detectEmergencyFlag(body.prompt)
+    # Background flag detection (pass the Location model; your worker can accept it)
+    # If your detectEmergencyFlag expects a dict, change the next line to:
+    # detectEmergencyFlag(body.prompt, body.contactNo, getattr(body.location, "model_dump", lambda: body.location)())
+    detectEmergencyFlag(body.prompt, body.contactNo, body.location)
 
-    # assemble conversation
+    # Assemble conversation
     history = render_history(x_session_id)
     sys_prefix = (body.system + "\n\n") if body.system else ""
     convo = (history + "\n\n") if history else ""
     requested_model = resolve_chat_model(body.model)
 
-    # NEW: neutral metadata header (consumed by LLM or downstream)
+    # Neutral metadata header (uses the Location model)
     meta = ""
-    if body.location and isinstance(body.location, dict):
-        lat = body.location.get("lat")
-        lon = body.location.get("lon")
-        acc = body.location.get("accuracy")
-        if lat is not None and lon is not None:
-            meta += "[User Location]\n"
-            meta += f"Latitude: {lat}, Longitude: {lon}"
-            if acc is not None:
-                meta += f", Accuracy≈{acc}m"
-            meta += "\n"
+    meta += _loc_to_meta(body.location)
     if body.contactNo:
         meta += "[Contact]\n" + str(body.contactNo).strip() + "\n"
 
-    # prefer RAG if an index exists for the selected crisis
+    # Prefer RAG if an index exists for the selected crisis
     vector = load_vectorstore_if_exists(body.crisis)
     if vector is not None:
         reply = call_rag(body.prompt, requested_model, vector)
@@ -471,11 +521,13 @@ def setup_rag_chain(model_name: str, vector_store: FAISS):
     return chain
 
 def call_rag(user_prompt: str, model_name: str, vector_store: FAISS) -> str:
-    print("Rag is called")
+    print(f"Rag is called with model name {model_name}")
     rag_chain = setup_rag_chain(model_name, vector_store)
+    print(f"user_prompt:{user_prompt}")
     return (rag_chain.invoke(user_prompt) or "").strip()
 
 def call_ollama(full_prompt: str, model_name: str) -> str:
+    print(f"full_prompt used for ollama:{full_prompt}")
     # Raw REST for maximal control + portability
     payload = {
         "model": model_name,

@@ -1,6 +1,5 @@
-How to Run
 
-
+# How to Run
 First run the presetup script present in presetup sub-folder
 pre-setup/fixed_bootstrap.ps1
 Then follow these steps to run the application:
@@ -21,7 +20,7 @@ Once the above one time script run is completed, going foreard we only need to r
 run_aidmate.ps1
 
 
-##Troubkeshoot purpose###
+# Troubkeshoot purpose###
 Once you complete the setup scripts then close the pwershell window (but dont close the ollama server window)
 Make sure Ollama is running
 If not then start it by running the following command in a new:
@@ -32,8 +31,20 @@ Edit
 Start your FastAPI backend
 
 To Run teh Fast API in VS code locally, follow below steps-
+# Remove old venv
+rmdir .venv -Recurse -Force
+
+# Create a new one with your current python
+python -m venv .venv
+
+# Activate it
 .\.venv\Scripts\activate
+
+# Upgrade pip
+python -m pip install --upgrade pip
+
+# start the web server
 uvicorn app:app --host 0.0.0.0 --port 7860 --reload
 
-Open the UI-
+# Open the UI-
 open in folder explorer \web\index.html and open in your browser.
