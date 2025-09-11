@@ -369,7 +369,7 @@ def ask(body: AskBody, x_session_id: Optional[str] = Header(default="")):
     # Background flag detection (pass the Location model; your worker can accept it)
     # If your detectEmergencyFlag expects a dict, change the next line to:
     # detectEmergencyFlag(body.prompt, body.contactNo, getattr(body.location, "model_dump", lambda: body.location)())
-        detectEmergencyFlag(body.prompt, body.contactNo, body.location)
+    detectEmergencyFlag(body.prompt, body.contactNo, body.location)
     
     # Assemble conversation
     history = render_history(x_session_id)
@@ -389,22 +389,33 @@ def ask(body: AskBody, x_session_id: Optional[str] = Header(default="")):
     engine_used = None
     print(f"[engine] requested={engine_req} -> use_openai={use_openai}")
 
-    # Prefer RAG (kept as-is with Ollama for minimal changes)
-    vector = load_vectorstore_if_exists(body.crisis) if body.crisis else None
-    if vector is not None:
-        reply = call_rag(body.prompt, requested_model, vector)
-        engine_used = "ollama"
-    else:
+    if use_openai:
         full_prompt = sys_prefix + meta + convo + "User: " + body.prompt + "\nAssistant:"
-        if use_openai:
-            reply = call_openai_chat(full_prompt, system_prefix="")
-            engine_used = "openai" if reply else None
-            if not reply:
+        print(f"using openai model {full_prompt}")
+        reply = call_openai_chat(full_prompt, system_prefix="")
+        engine_used = "openai" if reply else None
+        if not reply:
+            print(f"started using offline model with no reply {full_prompt}")
+            vector = load_vectorstore_if_exists(body.crisis) if body.crisis else None
+            if vector is not None:
+                reply = call_rag(body.prompt, requested_model, vector)
+                engine_used = "ollama"
+            else:
+                
                 reply = call_ollama(full_prompt, requested_model)
                 engine_used = "ollama"
+                print(f"completed using offline model with no reply {full_prompt}")
+    else:
+        # Prefer RAG (kept as-is with Ollama for minimal changes)
+        vector = load_vectorstore_if_exists(body.crisis) if body.crisis else None
+        if vector is not None:
+            reply = call_rag(body.prompt, requested_model, vector)
+            engine_used = "ollama"
         else:
+            full_prompt = sys_prefix + meta + convo + "User: " + body.prompt + "\nAssistant:"
             reply = call_ollama(full_prompt, requested_model)
             engine_used = "ollama"
+        
 
     # Second-chance if weak
     if not reply or any(ind in reply.lower() for ind in no_answer_indicators):
@@ -592,11 +603,17 @@ def setup_rag_chain(model_name: str, vector_store: FAISS):
     )
     return chain
 
+
 def call_rag(user_prompt: str, model_name: str, vector_store: FAISS) -> str:
     print(f"Rag is called with model name {model_name}")
-    rag_chain = setup_rag_chain(model_name, vector_store)
-    print(f"user_prompt:{user_prompt}")
-    return (rag_chain.invoke(user_prompt) or "").strip()
+    try:
+        rag_chain = setup_rag_chain(model_name, vector_store)
+        print(f"user_prompt:{user_prompt}")
+        return (rag_chain.invoke(user_prompt) or "").strip()
+    except Exception as e:
+        print(f"[RAG] failed: {e}")  # e will include httpx.ConnectError if Ollama is down
+        return ""
+
 
 def call_ollama(full_prompt: str, model_name: str) -> str:
     print(f"full_prompt used for ollama:{full_prompt}")
@@ -612,6 +629,8 @@ def call_ollama(full_prompt: str, model_name: str) -> str:
             "num_thread": min(os.cpu_count() or 4, 6)
         }
     }
+    print("[ollama] endpoint =", OLLAMA_GEN_URL)
+
     r = requests.post(OLLAMA_GEN_URL, json=payload, timeout=600)
     r.raise_for_status()
     data = r.json()
