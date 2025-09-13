@@ -34,6 +34,7 @@ Start your FastAPI backend
 Then in vscode terminal run the following commands:
 
 cd C:\SourceCode\AidMate
+python -m venv venv 
 .\.venv\Scripts\activate
 uvicorn app:app --host 0.0.0.0 --port 7860 --reload
 
